@@ -24,23 +24,37 @@ def get_db_connection():
 def create_tables():
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Tạo bảng lưu thông tin IP
+    
+    # Tạo bảng lưu thông tin IP từ API /check
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS ip_logs (
         ip TEXT PRIMARY KEY,
         last_checked TIMESTAMP
     )
     ''')
-    # Tạo bảng lưu thống kê số lần allow và notAllow
+    
+    # Tạo bảng lưu thông tin IP từ API /ip
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS ip_records (
+        ip TEXT PRIMARY KEY,
+        last_checked TIMESTAMP
+    )
+    ''')
+    
+    # Tạo bảng lưu thống kê số lần allow, notAllow, fresh, duplicate
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS ip_stats (
         id SERIAL PRIMARY KEY,
         allow_count INTEGER DEFAULT 0,
-        not_allow_count INTEGER DEFAULT 0
+        not_allow_count INTEGER DEFAULT 0,
+        fresh_count INTEGER DEFAULT 0,
+        duplicate_count INTEGER DEFAULT 0
     )
     ''')
+    
     # Khởi tạo một dòng mặc định nếu bảng thống kê chưa có dữ liệu
-    cursor.execute("INSERT INTO ip_stats (allow_count, not_allow_count) SELECT 0, 0 WHERE NOT EXISTS (SELECT 1 FROM ip_stats)")
+    cursor.execute("INSERT INTO ip_stats (allow_count, not_allow_count, fresh_count, duplicate_count) SELECT 0, 0, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM ip_stats)")
+    
     conn.commit()
     conn.close()
 
@@ -53,7 +67,7 @@ def check_ip(ip: str):
     cursor = conn.cursor()
 
     try:
-        # Kiểm tra IP trong database
+        # Kiểm tra IP trong database /check
         cursor.execute("SELECT last_checked FROM ip_logs WHERE ip = %s", (ip,))
         row = cursor.fetchone()
 
@@ -79,6 +93,34 @@ def check_ip(ip: str):
         cursor.close()
         conn.close()
 
+@app.get("/ip")
+def log_ip(ip: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Kiểm tra IP trong database /ip
+        cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s", (ip,))
+        row = cursor.fetchone()
+
+        if row:
+            # IP đã tồn tại, tăng duplicate_count
+            cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
+            conn.commit()
+            return {"allow": False}
+        else:
+            # IP mới, lưu lại và tăng fresh_count
+            cursor.execute("INSERT INTO ip_records (ip, last_checked) VALUES (%s, %s)", (ip, datetime.now()))
+            cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
+            conn.commit()
+            return {"allow": True}
+    except Exception as e:
+        logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
+        return {"error": str(e)}
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.get("/info")
 def get_info():
     conn = get_db_connection()
@@ -86,12 +128,19 @@ def get_info():
 
     try:
         # Lấy thông tin từ bảng thống kê
-        cursor.execute("SELECT allow_count, not_allow_count FROM ip_stats WHERE id = 1")
+        cursor.execute("SELECT allow_count, not_allow_count, fresh_count, duplicate_count FROM ip_stats WHERE id = 1")
         row = cursor.fetchone()
         allow_count = row[0]
         not_allow_count = row[1]
+        fresh_count = row[2]
+        duplicate_count = row[3]
 
-        return {"allow": allow_count, "notAllow": not_allow_count}
+        return {
+            "allow": allow_count,
+            "notAllow": not_allow_count,
+            "fresh": fresh_count,
+            "duplicate": duplicate_count
+        }
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
         return {"error": str(e)}
