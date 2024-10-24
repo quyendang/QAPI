@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import psycopg2
 import os
 import logging
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = FastAPI()
 
@@ -60,6 +61,29 @@ def create_tables():
 
 # Gọi hàm tạo bảng khi khởi động ứng dụng
 create_tables()
+
+# Hàm xóa IP đã quá hạn (hơn 2 ngày) khỏi ip_records
+def delete_old_ips():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Tính toán thời gian 2 ngày trước
+        time_threshold = datetime.now() - timedelta(days=2)
+        # Xóa các IP có last_checked > 2 ngày
+        cursor.execute("DELETE FROM ip_records WHERE last_checked < %s", (time_threshold,))
+        deleted_rows = cursor.rowcount
+        conn.commit()
+        logging.info(f"Deleted {deleted_rows} old IPs from ip_records.")
+    except Exception as e:
+        logging.error(f"Error occurred while deleting old IPs: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
+
+# Scheduler để lên lịch thực hiện công việc xóa IP cũ mỗi 12 giờ
+scheduler = BackgroundScheduler()
+scheduler.add_job(delete_old_ips, 'interval', hours=12)
+scheduler.start()
 
 @app.get("/check")
 def check_ip(ip: str):
