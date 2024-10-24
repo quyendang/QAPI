@@ -68,7 +68,7 @@ def delete_old_ips():
     cursor = conn.cursor()
     try:
         # Tính toán thời gian 2 ngày trước
-        time_threshold = datetime.now() - timedelta(days=2)
+        time_threshold = datetime.now() - timedelta(days=1)
         # Xóa các IP có last_checked > 2 ngày
         cursor.execute("DELETE FROM ip_records WHERE last_checked < %s", (time_threshold,))
         deleted_rows = cursor.rowcount
@@ -128,16 +128,19 @@ def log_ip(ip: str):
         row = cursor.fetchone()
 
         if row:
-            # IP đã tồn tại, tăng duplicate_count
-            cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
-            conn.commit()
-            return {"allow": False}
-        else:
-            # IP mới, lưu lại và tăng fresh_count
-            cursor.execute("INSERT INTO ip_records (ip, last_checked) VALUES (%s, %s)", (ip, datetime.now()))
-            cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
-            conn.commit()
-            return {"allow": True}
+            last_checked = row[0]  # Đã là timestamp
+            if datetime.now() - last_checked < timedelta(hours=15):
+                # Nếu IP đã được check trong vòng 24 giờ, tăng duplicate_count
+                cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
+                conn.commit()
+                return {"allow": False}
+
+        # Nếu IP mới hoặc đã quá 24 giờ, lưu lại và tăng fresh_count
+        cursor.execute("INSERT INTO ip_records (ip, last_checked) VALUES (%s, %s) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
+                       (ip, datetime.now()))
+        cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
+        conn.commit()
+        return {"allow": True}
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
         return {"error": str(e)}
