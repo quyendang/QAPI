@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from datetime import datetime, timedelta
+import pytz
 import psycopg2
 import os
 import logging
@@ -155,7 +156,25 @@ def log_ip(ip: str, time: int = 15):
                 # Nếu IP đã được check trong vòng 24 giờ, tăng duplicate_count
                 cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
                 conn.commit()
-                return {"allow": False, "last_checked": last_checked.strftime("%Y-%m-%d %H:%M:%S") if last_checked else None}
+                gmt = pytz.timezone('GMT')
+                gmt_plus_7 = pytz.timezone('Asia/Bangkok')
+                last_checked_gmt = gmt.localize(last_checked).astimezone(gmt_plus_7)
+                # Tính thời gian "time ago"
+                now_gmt_plus_7 = datetime.now(pytz.timezone('Asia/Bangkok'))
+                time_difference = now_gmt_plus_7 - last_checked_gmt
+    
+                # Format thời gian "time ago"
+                time_ago = ''
+                if time_difference.days > 0:
+                    time_ago = f"{time_difference.days} days ago"
+                elif time_difference.seconds >= 3600:
+                    time_ago = f"{time_difference.seconds // 3600} hours ago"
+                elif time_difference.seconds >= 60:
+                    time_ago = f"{time_difference.seconds // 60} minutes ago"
+                else:
+                    time_ago = f"{time_difference.seconds} seconds ago"
+                
+                return {"allow": False, "last_checked": time_ago if last_checked else None}
 
         # Nếu IP mới hoặc đã quá 24 giờ, lưu lại và tăng fresh_count
         cursor.execute("INSERT INTO ip_records (ip, last_checked) VALUES (%s, %s) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
