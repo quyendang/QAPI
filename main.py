@@ -117,7 +117,7 @@ def check_ip(ip: str):
         cursor.close()
         conn.close()
         
-@app.delete("/delete")
+@app.get("/delete")
 def delete_old_ips_24h():
     conn = get_db_connection()
     cursor = conn.cursor()
