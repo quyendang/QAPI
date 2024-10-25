@@ -144,7 +144,7 @@ def delete_old_ips_time(time: int = 24):
         conn.commit()
         logging.info(f"Deleted {deleted_rows} old IPs from ip_records.")
         
-        return {"message": f"Deleted {deleted_rows} IP(s) last checked over 24 hours ago."}
+        return {"message": f"Deleted {deleted_rows} IP(s) last checked over {time} hours ago."}
     except Exception as e:
         logging.error(f"Error occurred while deleting old IPs: {str(e)}")
         return {"error": str(e)}
