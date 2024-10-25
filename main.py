@@ -116,6 +116,28 @@ def check_ip(ip: str):
     finally:
         cursor.close()
         conn.close()
+        
+@app.delete("/delete")
+def delete_old_ips_24h():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Tính toán thời gian 24 giờ trước
+        time_threshold = datetime.now() - timedelta(hours=24)
+        # Xóa các IP có last_checked hơn 24 giờ
+        cursor.execute("DELETE FROM ip_records WHERE last_checked < %s", (time_threshold,))
+        deleted_rows = cursor.rowcount
+        conn.commit()
+        logging.info(f"Deleted {deleted_rows} old IPs from ip_records.")
+        
+        return {"message": f"Deleted {deleted_rows} IP(s) last checked over 24 hours ago."}
+    except Exception as e:
+        logging.error(f"Error occurred while deleting old IPs: {str(e)}")
+        return {"error": str(e)}
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.get("/ip")
 def log_ip(ip: str):
