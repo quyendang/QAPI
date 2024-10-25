@@ -127,13 +127,13 @@ def check_ip(ip: str):
         conn.close()
         
 @app.get("/delete")
-def delete_old_ips_24h():
+def delete_old_ips_time(time: int = 24):
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
         # Tính toán thời gian 24 giờ trước
-        time_threshold = datetime.now() - timedelta(hours=24)
+        time_threshold = datetime.now() - timedelta(hours=int(time))
         # Xóa các IP có last_checked hơn 24 giờ
         cursor.execute("DELETE FROM ip_records WHERE last_checked < %s", (time_threshold,))
         deleted_rows = cursor.rowcount
