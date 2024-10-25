@@ -57,6 +57,10 @@ def create_tables():
     # Khởi tạo một dòng mặc định nếu bảng thống kê chưa có dữ liệu
     cursor.execute("INSERT INTO ip_stats (allow_count, not_allow_count, fresh_count, duplicate_count) SELECT 0, 0, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM ip_stats)")
     
+    cursor.execute("""
+    ALTER TABLE ip_stats 
+    ADD COLUMN IF NOT EXISTS last_delete TEXT
+    """)
     conn.commit()
     conn.close()
 
@@ -73,6 +77,10 @@ def delete_old_ips():
         # Xóa các IP có last_checked > 2 ngày
         cursor.execute("DELETE FROM ip_records WHERE last_checked < %s", (time_threshold,))
         deleted_rows = cursor.rowcount
+        conn.commit()
+        # Update last_delete in ip_stats
+        last_delete_message = f"Deleted {deleted_rows} old IPs at {datetime.now()}"
+        cursor.execute("UPDATE ip_stats SET last_delete = %s WHERE id = 1", (last_delete_message,))
         conn.commit()
         logging.info(f"Deleted {deleted_rows} old IPs from ip_records.")
     except Exception as e:
@@ -129,6 +137,10 @@ def delete_old_ips_24h():
         # Xóa các IP có last_checked hơn 24 giờ
         cursor.execute("DELETE FROM ip_records WHERE last_checked < %s", (time_threshold,))
         deleted_rows = cursor.rowcount
+        conn.commit()
+        # Update last_delete in ip_stats
+        last_delete_message = f"Deleted {deleted_rows} old IPs at {datetime.now()}"
+        cursor.execute("UPDATE ip_stats SET last_delete = %s WHERE id = 1", (last_delete_message,))
         conn.commit()
         logging.info(f"Deleted {deleted_rows} old IPs from ip_records.")
         
@@ -196,18 +208,20 @@ def get_info():
 
     try:
         # Lấy thông tin từ bảng thống kê
-        cursor.execute("SELECT allow_count, not_allow_count, fresh_count, duplicate_count FROM ip_stats WHERE id = 1")
+        cursor.execute("SELECT allow_count, not_allow_count, fresh_count, duplicate_count, last_delete FROM ip_stats WHERE id = 1")
         row = cursor.fetchone()
         allow_count = row[0]
         not_allow_count = row[1]
         fresh_count = row[2]
         duplicate_count = row[3]
+        last_delete = row[4]
 
         return {
             "allow": allow_count,
             "notAllow": not_allow_count,
             "fresh": fresh_count,
-            "duplicate": duplicate_count
+            "duplicate": duplicate_count,
+            "last_delete": last_delete
         }
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
