@@ -140,7 +140,7 @@ def delete_old_ips_24h():
         conn.close()
 
 @app.get("/ip")
-def log_ip(ip: str):
+def log_ip(ip: str, time: int = 15):
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -151,18 +151,18 @@ def log_ip(ip: str):
 
         if row:
             last_checked = row[0]  # Đã là timestamp
-            if datetime.now() - last_checked < timedelta(hours=15):
+            if datetime.now() - last_checked < timedelta(hours=int(time)):
                 # Nếu IP đã được check trong vòng 24 giờ, tăng duplicate_count
                 cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
                 conn.commit()
-                return {"allow": False}
+                return {"allow": False, "last_checked": last_checked.strftime("%Y-%m-%d %H:%M:%S") if last_checked else None}
 
         # Nếu IP mới hoặc đã quá 24 giờ, lưu lại và tăng fresh_count
         cursor.execute("INSERT INTO ip_records (ip, last_checked) VALUES (%s, %s) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
                        (ip, datetime.now()))
         cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
         conn.commit()
-        return {"allow": True}
+        return {"allow": True, "last_checked": None}
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
         return {"error": str(e)}
