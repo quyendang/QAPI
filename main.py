@@ -106,7 +106,7 @@ def check_ip(ip: str):
 
         if row:
             last_checked = row[0]  # Đã là timestamp
-            if datetime.now() - last_checked < timedelta(hours=24):
+            if datetime.now() - last_checked < timedelta(hours=12):
                 # Cập nhật số lượng notAllow
                 cursor.execute("UPDATE ip_stats SET not_allow_count = not_allow_count + 1 WHERE id = 1")
                 conn.commit()
@@ -153,7 +153,7 @@ def delete_old_ips_time(time: int = 24):
         conn.close()
 
 @app.get("/ip")
-def log_ip(ip: str, time: int = 6):
+def log_ip(ip: str, time: int = 1):
     conn = get_db_connection()
     cursor = conn.cursor()
 
