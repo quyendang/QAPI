@@ -106,7 +106,7 @@ def check_ip(ip: str):
 
         if row:
             last_checked = row[0]  # Đã là timestamp
-            if datetime.now() - last_checked < timedelta(hours=12):
+            if datetime.now() - last_checked < timedelta(hours=1):
                 # Cập nhật số lượng notAllow
                 cursor.execute("UPDATE ip_stats SET not_allow_count = not_allow_count + 1 WHERE id = 1")
                 conn.commit()
