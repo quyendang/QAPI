@@ -94,6 +94,38 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.start()
 
+
+@app.get("/geteid")
+def get_eid():
+    try:
+        # Making a request to fetch the HTML content
+        headers = {
+            'Sec-Fetch-Site': 'none',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Mode': 'navigate',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+            'Sec-Fetch-Dest': 'document'
+        }
+        url = 'https://googleads.g.doubleclick.net/mads/static/sdk/native/sdk-core-v40.html?sdk=afma-sdk-i-v9.0.0'
+        response = requests.get(url, headers=headers)
+        html_content = response.text
+
+        # Parsing the HTML content for sdkLoaderEID and sdkLoaderEID2
+        sdkLoaderEID_match = re.search(r'var sdkLoaderEID = "([^"]+)"', html_content)
+        sdkLoaderEID2_match = re.search(r'f.includes\("([^"]+)"\)', html_content)
+
+        sdkLoaderEID = sdkLoaderEID_match.group(1) if sdkLoaderEID_match else None
+        sdkLoaderEID2 = sdkLoaderEID2_match.group(1) if sdkLoaderEID2_match else None
+
+        # Return the JSON response
+        return {"sdkLoaderEID": sdkLoaderEID, "sdkLoaderEID2": sdkLoaderEID2}
+    except Exception as e:
+        logging.error(f"Error fetching EID values: {str(e)}")
+        return {"error": str(e)}
+
+
 @app.get("/check")
 def check_ip(ip: str):
     conn = get_db_connection()
