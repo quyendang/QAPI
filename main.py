@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI
 from datetime import datetime, timedelta
 import pytz
@@ -5,7 +6,7 @@ import psycopg2
 import os
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
-
+import re
 app = FastAPI()
 
 # Cấu hình logging
@@ -96,7 +97,7 @@ scheduler.start()
 
 
 @app.get("/geteid")
-def get_eid():
+def get_eid(version: str = "v9.0.0"):
     try:
         # Making a request to fetch the HTML content
         headers = {
@@ -108,7 +109,7 @@ def get_eid():
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             'Sec-Fetch-Dest': 'document'
         }
-        url = 'https://googleads.g.doubleclick.net/mads/static/sdk/native/sdk-core-v40.html?sdk=afma-sdk-i-v9.0.0'
+        url = f'https://googleads.g.doubleclick.net/mads/static/sdk/native/sdk-core-v40.html?sdk=afma-sdk-i-{version}'
         response = requests.get(url, headers=headers)
         html_content = response.text
 
@@ -120,7 +121,7 @@ def get_eid():
         sdkLoaderEID2 = sdkLoaderEID2_match.group(1) if sdkLoaderEID2_match else None
 
         # Return the JSON response
-        return {"sdkLoaderEID": sdkLoaderEID, "sdkLoaderEID2": sdkLoaderEID2}
+        return {"sdkLoaderEID": sdkLoaderEID, "sdkLoaderEID2": sdkLoaderEID2, "version": version}
     except Exception as e:
         logging.error(f"Error fetching EID values: {str(e)}")
         return {"error": str(e)}
