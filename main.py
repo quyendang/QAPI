@@ -97,7 +97,7 @@ scheduler.start()
 
 
 @app.get("/geteid")
-def get_eid(version: str = "v9.0.0"):
+def get_eid(version: str = "v9.2.0"):
     try:
         # Making a request to fetch the HTML content
         headers = {
