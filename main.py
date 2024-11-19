@@ -62,6 +62,12 @@ def create_tables():
     ALTER TABLE ip_stats 
     ADD COLUMN IF NOT EXISTS last_delete TEXT
     """)
+
+    # Thêm cột group_id nếu chưa tồn tại
+    cursor.execute("""
+    ALTER TABLE ip_records 
+    ADD COLUMN IF NOT EXISTS group_id TEXT
+    """)
     conn.commit()
     conn.close()
 
@@ -186,19 +192,22 @@ def delete_old_ips_time(time: int = 24):
         conn.close()
 
 @app.get("/ip")
-def log_ip(ip: str, time: int = 3):
+def log_ip(ip: str, time: int = 3, groupId: str = None):
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # Kiểm tra IP trong database /ip
-        cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s", (ip,))
+        # Kiểm tra IP trong database với groupId
+        if groupId:
+            cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s AND groupId = %s", (ip, groupId))
+        else:
+            cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s AND groupId IS NULL", (ip,))
         row = cursor.fetchone()
 
         if row:
             last_checked = row[0]  # Đã là timestamp
             if datetime.now() - last_checked < timedelta(hours=int(time)):
-                # Nếu IP đã được check trong vòng 24 giờ, tăng duplicate_count
+                # Nếu IP đã được check trong khoảng thời gian, tăng duplicate_count
                 cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
                 conn.commit()
                 gmt = pytz.timezone('GMT')
@@ -207,7 +216,7 @@ def log_ip(ip: str, time: int = 3):
                 # Tính thời gian "time ago"
                 now_gmt_plus_7 = datetime.now(pytz.timezone('Asia/Bangkok'))
                 time_difference = now_gmt_plus_7 - last_checked_gmt
-    
+
                 # Format thời gian "time ago"
                 time_ago = ''
                 if time_difference.days > 0:
@@ -221,9 +230,15 @@ def log_ip(ip: str, time: int = 3):
                 
                 return {"allow": False, "last_checked": time_ago if last_checked else None}
 
-        # Nếu IP mới hoặc đã quá 24 giờ, lưu lại và tăng fresh_count
-        cursor.execute("INSERT INTO ip_records (ip, last_checked) VALUES (%s, %s) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
-                       (ip, datetime.now()))
+        # Nếu IP mới hoặc đã quá thời gian kiểm tra, lưu lại
+        if groupId:
+            cursor.execute("INSERT INTO ip_records (ip, last_checked, groupId) VALUES (%s, %s, %s) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
+                           (ip, datetime.now(), groupId))
+        else:
+            cursor.execute("INSERT INTO ip_records (ip, last_checked, groupId) VALUES (%s, %s, NULL) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
+                           (ip, datetime.now()))
+        
+        # Tăng fresh_count
         cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
         conn.commit()
         return {"allow": True, "last_checked": None}
@@ -233,6 +248,7 @@ def log_ip(ip: str, time: int = 3):
     finally:
         cursor.close()
         conn.close()
+
 
 @app.get("/info")
 def get_info():
