@@ -66,7 +66,7 @@ def create_tables():
     # Thêm cột group_id nếu chưa tồn tại
     cursor.execute("""
     ALTER TABLE ip_records 
-    ADD COLUMN IF NOT EXISTS group_id TEXT
+    ADD COLUMN IF NOT EXISTS groupId TEXT
     """)
     conn.commit()
     conn.close()
