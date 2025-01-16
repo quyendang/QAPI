@@ -1,5 +1,8 @@
 import requests
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
+from typing import List
+from collections import defaultdict
+import random
 from datetime import datetime, timedelta
 import pytz
 import psycopg2
@@ -8,7 +11,7 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 app = FastAPI()
-
+proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
 
@@ -101,7 +104,25 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.start()
 
+@app.get("/country")
+def get_country(countrys: str, proxy: str):
+    # Parse the country list from the query parameter
+    country_list = countrys.split(",")
+    
+    # Check if the proxy already has a randomized list
+    if proxy not in proxy_country_mapping or not proxy_country_mapping[proxy]:
+        # Create a new randomized list for this proxy
+        proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
+    
+    # Return the next country in the list
+    selected_country = proxy_country_mapping[proxy].pop(0)
 
+    # If the list is exhausted, reset with a new randomized order
+    if not proxy_country_mapping[proxy]:
+        proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
+    
+    return {"proxy": proxy, "country": selected_country}
+    
 @app.get("/geteid")
 def get_eid(version: str = "v9.2.0"):
     try:
