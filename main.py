@@ -101,7 +101,7 @@ def check_devices():
             last_update_time = datetime.fromtimestamp(device_info['lastUpdateTime'] / 1000, pytz.UTC)
             time_diff = current_time - last_update_time
             
-            if time_diff < timedelta(minutes=30):
+            if time_diff > timedelta(minutes=30):
                 ip = device_info.get('ip', 'Unknown IP')
                 outdated_devices.append(ip)
         
@@ -154,7 +154,7 @@ def delete_old_ips():
 # Scheduler để lên lịch thực hiện công việc xóa IP cũ mỗi 12 giờ
 scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
-scheduler.add_job(check_devices, 'interval', minutes=1)
+scheduler.add_job(check_devices, 'interval', minutes=15)
 scheduler.start()
 
 @app.get("/country")
