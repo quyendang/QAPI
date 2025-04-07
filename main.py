@@ -10,6 +10,8 @@ import os
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
+import json
+import pytz
 app = FastAPI()
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
@@ -77,6 +79,56 @@ def create_tables():
 # Gọi hàm tạo bảng khi khởi động ứng dụng
 create_tables()
 
+# Hàm kiểm tra devices và gửi thông báo qua Pushover
+def check_devices():
+    try:
+        # Gọi API để lấy dữ liệu devices
+        response = requests.get("https://musik-9b557-default-rtdb.asia-southeast1.firebasedatabase.app/devices.json")
+        devices = response.json()
+        
+        if not devices:
+            logging.info("No devices found in the response")
+            return
+
+        current_time = datetime.now(pytz.UTC)
+        outdated_devices = []
+        
+        # Kiểm tra từng device
+        for device_id, device_info in devices.items():
+            if not isinstance(device_info, dict) or 'lastUpdateTime' not in device_info:
+                continue
+                
+            last_update_time = datetime.fromtimestamp(device_info['lastUpdateTime'] / 1000, pytz.UTC)
+            time_diff = current_time - last_update_time
+            
+            if time_diff > timedelta(minutes=30):
+                ip = device_info.get('ip', 'Unknown IP')
+                outdated_devices.append(ip)
+        
+        # Nếu có device quá hạn, gửi thông báo qua Pushover
+        if outdated_devices:
+            message = f"⛔ {len(outdated_devices)} devices offline : {', '.join(outdated_devices)}"
+            pushover_data = {
+                "token": "ah2hby41xn2viu41syq295ipeoss4e",
+                "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
+                "device": "anhoi",
+                "title": "Device Warning",
+                "message": message
+            }
+            
+            response = requests.post(
+                "https://api.pushover.net/1/messages.json",
+                data=pushover_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            
+            if response.status_code == 200:
+                logging.info(f"Pushover notification sent successfully: {message}")
+            else:
+                logging.error(f"Failed to send Pushover notification: {response.text}")
+                
+    except Exception as e:
+        logging.error(f"Error in check_devices: {str(e)}")
 # Hàm xóa IP đã quá hạn (hơn 2 ngày) khỏi ip_records
 def delete_old_ips():
     conn = get_db_connection()
@@ -102,6 +154,7 @@ def delete_old_ips():
 # Scheduler để lên lịch thực hiện công việc xóa IP cũ mỗi 12 giờ
 scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
+scheduler.add_job(check_devices, 'interval', minutes=15)
 scheduler.start()
 
 @app.get("/country")
