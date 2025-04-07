@@ -103,9 +103,7 @@ def check_devices():
             
             if time_diff > timedelta(minutes=30):
                 ip = device_info.get('ip', 'Unknown IP')
-                pub = device_info.get('pub', 'Unknown Pub')
-                offline_device = f"{ip} ({pub})"
-                outdated_devices.append(offline_device)
+                outdated_devices.append(ip)
         
         # Nếu có device quá hạn, gửi thông báo qua Pushover
         if outdated_devices:
