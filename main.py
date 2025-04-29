@@ -157,11 +157,12 @@ def check_hyperliquid_pnl():
         for position in asset_positions:
             unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
             total_unrealized_pnl += unrealized_pnl
-            pnl = pnl + f"{position['position'].get('coin', '')}: {position['position'].get('unrealizedPnl', '')}\n"
+            symbol = unrealized_pnl > 0 ? "✅" : "❌"
+            pnl = pnl + f"{symbol} {position['position'].get('coin', '')}: {position['position'].get('unrealizedPnl', '')} USD\n"
         
         # Nếu tổng unrealizedPnl > 0, gửi thông báo qua Pushover
         if total_unrealized_pnl > 0:
-            message = f"✅Total Unrealized PnL is {total_unrealized_pnl:.2f} USD\n{pnl}"
+            message = f"Unrealized PnL: {total_unrealized_pnl:.2f} USD\n{pnl}"
             pushover_data = {
                 "token": "ah2hby41xn2viu41syq295ipeoss4e",
                 "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
