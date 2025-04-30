@@ -158,7 +158,7 @@ def check_hyperliquid_pnl():
             unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
             total_unrealized_pnl += unrealized_pnl
             symbol = "📈" if unrealized_pnl > 0 else "📉"
-            pnl = pnl + f"<font color='#00C000'>{symbol} {position['position'].get('coin', '')}: {position['position'].get('unrealizedPnl', '')}</font> 💵\n"
+            pnl = pnl + f"{symbol} {position['position'].get('coin', '')}: {position['position'].get('unrealizedPnl', '')} 💵\n"
         
         # Nếu tổng unrealizedPnl > 0, gửi thông báo qua Pushover
         if total_unrealized_pnl > 0:
