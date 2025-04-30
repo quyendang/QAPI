@@ -162,12 +162,12 @@ def check_hyperliquid_pnl():
         
         # Nếu tổng unrealizedPnl > 0, gửi thông báo qua Pushover
         if total_unrealized_pnl > 0:
-            message = f"Unrealized PnL: {total_unrealized_pnl:.2f} 💵\n{pnl}"
+            message = pnl
             pushover_data = {
                 "token": "ah2hby41xn2viu41syq295ipeoss4e",
                 "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
                 "device": "pnl",
-                "title": "Hyperliquid Profit Alert",
+                "title": f"Unrealized PnL: {total_unrealized_pnl:.2f} 💵",
                 "message": message
             }
             
