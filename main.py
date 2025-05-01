@@ -158,7 +158,7 @@ def check_hyperliquid_pnl():
             unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
             total_unrealized_pnl += unrealized_pnl
             symbol = "📈" if unrealized_pnl > 0 else "📉"
-            pnl = pnl + f"{symbol} {position['position'].get('coin', '')}: {position['position'].get('unrealizedPnl', '')} 💵\n"
+            pnl = pnl + f"{symbol} {position['position'].get('coin', '')}: ${position['position'].get('unrealizedPnl', '')}\n"
         
         # Nếu tổng unrealizedPnl > 0, gửi thông báo qua Pushover
         if total_unrealized_pnl > 0:
@@ -167,7 +167,7 @@ def check_hyperliquid_pnl():
                 "token": "ah2hby41xn2viu41syq295ipeoss4e",
                 "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
                 "device": "pnl",
-                "title": f"Unrealized PnL: {total_unrealized_pnl:.2f} 💵",
+                "title": f"Unrealized PnL: ${total_unrealized_pnl:.2f}",
                 "message": message
             }
             
@@ -211,7 +211,7 @@ def delete_old_ips():
 scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.add_job(check_devices, 'interval', minutes=15)
-scheduler.add_job(check_hyperliquid_pnl, 'interval', minutes=3)
+scheduler.add_job(check_hyperliquid_pnl, 'interval', minutes=20)
 scheduler.start()
 
 @app.get("/country")
