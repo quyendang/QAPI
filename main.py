@@ -211,7 +211,7 @@ def delete_old_ips():
 scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.add_job(check_devices, 'interval', minutes=15)
-scheduler.add_job(check_hyperliquid_pnl, 'interval', minutes=20)
+scheduler.add_job(check_hyperliquid_pnl, 'interval', minutes=5)
 scheduler.start()
 
 @app.get("/country")
