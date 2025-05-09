@@ -112,7 +112,7 @@ def check_devices():
             pushover_data = {
                 "token": "ah2hby41xn2viu41syq295ipeoss4e",
                 "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
-                "device": "anhoi",
+                "sound": "anhoi",
                 "title": "Device Warning",
                 "message": message
             }
@@ -166,7 +166,7 @@ def check_hyperliquid_pnl():
             pushover_data = {
                 "token": "ah2hby41xn2viu41syq295ipeoss4e",
                 "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
-                "device": "pnl",
+                "sound": "pnl",
                 "title": f" Main Unrealized PnL: ${total_unrealized_pnl:.2f}",
                 "message": message
             }
