@@ -131,112 +131,75 @@ def check_devices():
     except Exception as e:
         logging.error(f"Error in check_devices: {str(e)}")
 
-# Hàm kiểm tra API Hyperliquid và gửi thông báo qua Pushover nếu có lợi nhuận
-def check_hyperliquid_pnl():
-    try:
-        # Gọi API Hyperliquid
-        url = "https://api.hyperliquid.xyz/info"
-        payload = {
-            "type": "clearinghouseState",
-            "user": "0x51A4D151A8241e528026F85930f049EC0d630eb2"
+def check_multiple_hyperliquid_pnls():
+    accounts = [
+        {
+            "address": "0x51A4D151A8241e528026F85930f049EC0d630eb2",
+            "label": "Main"
+        },
+        {
+            "address": "0x681411e36548aef2389e9a4122535afe793ff26d",
+            "label": "Robin"
         }
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code != 200:
-            logging.error(f"Failed to fetch Hyperliquid API: {response.text}")
-            return
-        
-        data = response.json()
-        
-        # Tính tổng unrealizedPnl từ assetPositions
-        total_unrealized_pnl = 0.0
-        asset_positions = data.get("assetPositions", [])
+    ]
 
-        pnl = ""
-        for position in asset_positions:
-            unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
-            total_unrealized_pnl += unrealized_pnl
-            symbol = "📈" if unrealized_pnl > 0 else "📉"
-            pnl = pnl + f"{symbol} {position['position'].get('coin', '')}: ${position['position'].get('unrealizedPnl', '')}\n"
-        
-        # Nếu tổng unrealizedPnl > 0, gửi thông báo qua Pushover
-        if total_unrealized_pnl > 0:
-            message = pnl
-            pushover_data = {
-                "token": "ah2hby41xn2viu41syq295ipeoss4e",
-                "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
-                "sound": "pnl",
-                "title": f" Main Unrealized PnL: ${total_unrealized_pnl:.2f}",
-                "message": message
+    combined_message = ""
+    total_combined_pnl = 0.0
+
+    for account in accounts:
+        try:
+            url = "https://api.hyperliquid.xyz/info"
+            payload = {
+                "type": "clearinghouseState",
+                "user": account["address"]
             }
-            
-            response = requests.post(
-                "https://api.pushover.net/1/messages.json",
-                data=pushover_data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
-            )
-            
-            if response.status_code == 200:
-                logging.info(f"Pushover notification sent successfully: {message}")
-            else:
-                logging.error(f"Failed to send Pushover notification: {response.text}")
-                
-    except Exception as e:
-        logging.error(f"Error in check_hyperliquid_pnl: {str(e)}")
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(url, json=payload, headers=headers)
 
-def check_hyperliquid_pnl2():
-    try:
-        # Gọi API Hyperliquid
-        url = "https://api.hyperliquid.xyz/info"
-        payload = {
-            "type": "clearinghouseState",
-            "user": "0x681411e36548aef2389e9a4122535afe793ff26d"
+            if response.status_code != 200:
+                logging.error(f"Failed to fetch API for {account['label']}: {response.text}")
+                continue
+
+            data = response.json()
+            asset_positions = data.get("assetPositions", [])
+
+            account_pnl = 0.0
+            pnl_detail = f"{account['label']}:\n"
+
+            for position in asset_positions:
+                unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
+                account_pnl += unrealized_pnl
+                symbol = "📈" if unrealized_pnl > 0 else "📉"
+                pnl_detail += f"{symbol} {position['position'].get('coin', '')}: ${unrealized_pnl:.2f}\n"
+
+            if account_pnl > 0:
+                total_combined_pnl += account_pnl
+                combined_message += f"{pnl_detail}\n"
+
+        except Exception as e:
+            logging.error(f"Error checking account {account['label']}: {str(e)}")
+
+    # Gửi Pushover nếu có tổng lợi nhuận
+    if total_combined_pnl > 0 and combined_message:
+        pushover_data = {
+            "token": "ah2hby41xn2viu41syq295ipeoss4e",
+            "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
+            "sound": "pnl",
+            "title": f"Tổng Unrealized PnL: ${total_combined_pnl:.2f}",
+            "message": combined_message
         }
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(url, json=payload, headers=headers)
-        
-        if response.status_code != 200:
-            logging.error(f"Failed to fetch Hyperliquid API: {response.text}")
-            return
-        
-        data = response.json()
-        
-        # Tính tổng unrealizedPnl từ assetPositions
-        total_unrealized_pnl = 0.0
-        asset_positions = data.get("assetPositions", [])
 
-        pnl = ""
-        for position in asset_positions:
-            unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
-            total_unrealized_pnl += unrealized_pnl
-            symbol = "📈" if unrealized_pnl > 0 else "📉"
-            pnl = pnl + f"{symbol} {position['position'].get('coin', '')}: ${position['position'].get('unrealizedPnl', '')}\n"
-        
-        # Nếu tổng unrealizedPnl > 0, gửi thông báo qua Pushover
-        if total_unrealized_pnl > 0:
-            message = pnl
-            pushover_data = {
-                "token": "ah2hby41xn2viu41syq295ipeoss4e",
-                "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
-                "device": "pnl",
-                "title": f"Robin Unrealized PnL: ${total_unrealized_pnl:.2f}",
-                "message": message
-            }
-            
-            response = requests.post(
-                "https://api.pushover.net/1/messages.json",
-                data=pushover_data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
-            )
-            
-            if response.status_code == 200:
-                logging.info(f"Pushover notification sent successfully: {message}")
-            else:
-                logging.error(f"Failed to send Pushover notification: {response.text}")
-                
-    except Exception as e:
-        logging.error(f"Error in check_hyperliquid_pnl: {str(e)}")
+        response = requests.post(
+            "https://api.pushover.net/1/messages.json",
+            data=pushover_data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+
+        if response.status_code == 200:
+            logging.info("Pushover notification sent successfully.")
+        else:
+            logging.error(f"Failed to send Pushover notification: {response.text}")
+
 # Hàm xóa IP đã quá hạn (hơn 2 ngày) khỏi ip_records
 def delete_old_ips():
     conn = get_db_connection()
@@ -263,8 +226,7 @@ def delete_old_ips():
 scheduler = BackgroundScheduler()
 scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.add_job(check_devices, 'interval', minutes=15)
-scheduler.add_job(check_hyperliquid_pnl, 'interval', minutes=3)
-scheduler.add_job(check_hyperliquid_pnl2, 'interval', minutes=4)
+scheduler.add_job(check_multiple_hyperliquid_pnls, 'interval', minutes=3)
 scheduler.start()
 
 @app.get("/country")
