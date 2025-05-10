@@ -164,13 +164,13 @@ def check_multiple_hyperliquid_pnls():
             asset_positions = data.get("assetPositions", [])
 
             account_pnl = 0.0
-            pnl_detail = f"{account['label']}:\n"
+            pnl_detail = f"{account['label']}:"
 
             for position in asset_positions:
                 unrealized_pnl = float(position["position"].get("unrealizedPnl", 0.0))
                 account_pnl += unrealized_pnl
                 symbol = "📈" if unrealized_pnl > 0 else "📉"
-                pnl_detail += f"{symbol} {position['position'].get('coin', '')}: ${unrealized_pnl:.2f}\n"
+                pnl_detail += f"{symbol} {position['position'].get('coin', '')}: ${unrealized_pnl:.2f}. "
 
             if account_pnl > 0:
                 total_combined_pnl += account_pnl
