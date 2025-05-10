@@ -184,7 +184,7 @@ def check_multiple_hyperliquid_pnls():
         pushover_data = {
             "token": "ah2hby41xn2viu41syq295ipeoss4e",
             "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
-            "sound": "pnl",
+            "sound": "magic",
             "title": f"Tổng Unrealized PnL: ${total_combined_pnl:.2f}",
             "message": combined_message
         }
