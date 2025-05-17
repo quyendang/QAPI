@@ -311,51 +311,7 @@ def check_ip(ip: str):
         cursor.close()
         conn.close()
 
-@app.get("/shopee")
-async def shopee_redirect(origin_link: str = Query(..., description="Shopee product URL")):
-    # URL encode origin_link
-    encoded_link = urllib.parse.quote(origin_link, safe='')
-    
-    # Base Shopee affiliate URL
-    base_url = (
-        "https://s.shopee.vn/an_redir?"
-        "affiliate_id=17104820001&"
-        "sub_id=YT3-mLFny5YV8TzD_zlFPG_j7V2xLDdn0U6eZa8cr_7Q80YR7E0geYaSZX3A5ZErJqDGdsxJN1f98IMKWOH30wufCQ&"
-        f"origin_link={encoded_link}&nohelpkit=1"
-    )
-    
-    headers = {
-        "Host": "s.shopee.vn",
-        "Client-Request-Id": "7f4472a0-494f-4d52-b114-856f01ada030.6",
-        "Connection": "keep-alive",
-        "Accept": "*/*",
-        "User-Agent": "ShopeeVN/3.50.52 (com.beeasy.shopee.vn; build:3.50.52; iOS 18.4.1) Alamofire/5.0.5 appver=35052 language=vi app_type=1 platform=native_ios os_ver=18.4.1",
-        "af-ac-enc-sz-token": "r0JfDm+imbB5zH5JQK+q0A==|bLxOCVybwFaQna9NdkE9cvoUnqZHCVcwgYLf8RirP6iX80flbUpUK0nl3+A4gWHjZ7ZNooBlaf5UTsP39iO6rA==|4hvOryG6oNfVXUHM|08|2",
-        "X-Shopee-Client-Timezone": "Asia/Ho_Chi_Minh",
-        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8"
-    }
 
-    cookies = {
-        "csrftoken": "u1wAFspChZnHzSYxfWCooUJYOaoVk6P6",
-        "shopee_token": "EB1kiGYJRKxADNWGB4wnn/YgQHirtvgzstCb82zgs3H4eZbk8aWWqgZmvOk7cqUXObuzO5t9oBO3YTxarZZ5",
-        "SPC_ST": "zDEKoa7Oh1mdHz4wdrVvn+uEkfVWQYOBRr4vxDSQ+BUZz+o8rs7YmApbIn+3WT6jlQXbXU5fPh02DaOnvRxS+wJ5Fnx0ssE3n5BoCFlTvyNdbsQ+7RCzOLUOmng1ZLheyoDJbNJryykOCco3wWVaI3BKGf1xHh0jWKhfa5tWMoEGdtzL89Fu9RmjzT/YR+c1",
-        "SPC_SC_TK": "zDEKoa7Oh1mdHz4wdrVvn+uEkfVWQYOBRr4vxDSQ+BUZz+o8rs7YmApbIn+3WT6jlQXbXU5fPh02DaOnvRxS+w==",
-        "SPC_SC_UD": "184889579",
-        "SPC_U": "184889579"
-    }
-
-    try:
-        async with httpx.AsyncClient(follow_redirects=True) as client:
-            response = await client.get(base_url, headers=headers, cookies=cookies)
-        return JSONResponse(content={
-            "status_code": response.status_code,
-            "url": str(response.url),
-            "final_url": str(response.history[-1].headers.get("location")) if response.history else str(response.url),
-            "headers": dict(response.headers),
-            "text": response.text
-        })
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
         
 @app.get("/delete")
 def delete_old_ips_time(time: int = 24):
