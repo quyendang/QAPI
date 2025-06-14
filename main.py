@@ -12,7 +12,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import json
 import pytz
-import ipaddress
 app = FastAPI()
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
@@ -81,17 +80,17 @@ def create_tables():
 # Gọi hàm tạo bảng khi khởi động ứng dụng
 create_tables()
 
+# Gọi hàm này khi khởi động
 def fetch_uk_ip_ranges():
     global uk_ip_ranges
     url = "https://www.ipdeny.com/ipblocks/data/countries/gb.zone"
     try:
         response = requests.get(url)
         response.raise_for_status()
-        ip_lines = response.text.strip().splitlines()
-        uk_ip_ranges = [ipaddress.IPv4Network(line.strip()) for line in ip_lines]
-        print(f"Total UK IP ranges: {len(uk)}")
+        uk_ip_ranges = response.text.strip().splitlines()
+        print(f"Loaded {len(uk_ip_ranges)} UK IP ranges")
     except Exception as e:
-        print(f"Failed to fetch UK IP ranges: {uk_ip_ranges}")
+        print(f"Failed to fetch UK IP ranges: {e}")
         uk_ip_ranges = []
 
 fetch_uk_ip_ranges()
