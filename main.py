@@ -12,10 +12,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import json
 import pytz
+import ipaddress
 app = FastAPI()
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
+uk_ip_ranges = []
 
 # Hàm tạo kết nối đến database PostgreSQL
 def get_db_connection():
@@ -79,6 +81,20 @@ def create_tables():
 # Gọi hàm tạo bảng khi khởi động ứng dụng
 create_tables()
 
+def fetch_uk_ip_ranges():
+    global uk_ip_ranges
+    url = "https://www.ipdeny.com/ipblocks/data/countries/gb.zone"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        ip_lines = response.text.strip().splitlines()
+        uk_ip_ranges = [ipaddress.IPv4Network(line.strip()) for line in ip_lines]
+        print(f"Total UK IP ranges: {len(uk)}")
+    except Exception as e:
+        print(f"Failed to fetch UK IP ranges: {uk_ip_ranges}")
+        uk_ip_ranges = []
+
+fetch_uk_ip_ranges()
 # Hàm kiểm tra devices và gửi thông báo qua Pushover
 def check_devices():
     try:
