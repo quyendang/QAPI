@@ -408,6 +408,7 @@ def log_ip(ip: str, time: int = 3, groupId: str = None):
         conn.commit()
         for cidr in uk_ip_ranges:
             if ip_obj in IPNetwork(cidr):
+                print(f"UK IP: {ip}")
                 return {"allow": False, "last_checked": None}
                 
         return {"allow": True, "last_checked": None}
