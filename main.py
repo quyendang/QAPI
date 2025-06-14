@@ -361,6 +361,7 @@ def log_ip(ip: str, time: int = 3, groupId: str = None):
 
     try:
         # Kiểm tra IP trong database với groupId
+        ip_obj = IPAddress(ip)
         if groupId:
             cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s AND groupId = %s", (ip, groupId))
         else:
@@ -404,6 +405,10 @@ def log_ip(ip: str, time: int = 3, groupId: str = None):
         # Tăng fresh_count
         cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
         conn.commit()
+        for cidr in uk_ip_ranges:
+            if ip_obj in IPNetwork(cidr):
+                return {"allow": False, "last_checked": None}
+                
         return {"allow": True, "last_checked": None}
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
