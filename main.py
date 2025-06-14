@@ -12,6 +12,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import json
 import pytz
+from netaddr import IPAddress, IPNetwork
 app = FastAPI()
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
