@@ -356,7 +356,7 @@ def delete_old_ips_time(time: int = 24):
         conn.close()
 
 @app.get("/ip")
-def log_ip(ip: str, time: int = 3, groupId: str = None):
+def log_ip(ip: str, time: int = 2, groupId: str = None):
     conn = get_db_connection()
     cursor = conn.cursor()
 
