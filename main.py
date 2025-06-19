@@ -356,7 +356,7 @@ def delete_old_ips_time(time: int = 24):
         conn.close()
 
 @app.get("/ip")
-def log_ip(ip: str, time: int = 2, groupId: str = None):
+def log_ip(ip: str, time: int = 5, groupId: str = None):
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -406,10 +406,10 @@ def log_ip(ip: str, time: int = 2, groupId: str = None):
         # Tăng fresh_count
         cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
         conn.commit()
-        for cidr in uk_ip_ranges:
-            if ip_obj in IPNetwork(cidr):
-                print(f"UK IP: {ip}")
-                return {"allow": False, "last_checked": None}
+        # for cidr in uk_ip_ranges:
+        #     if ip_obj in IPNetwork(cidr):
+        #         print(f"UK IP: {ip}")
+        #         return {"allow": False, "last_checked": None}
                 
         return {"allow": True, "last_checked": None}
     except Exception as e:
