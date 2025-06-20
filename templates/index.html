@@ -8,12 +8,20 @@
 <body class="bg-light text-dark">
 <div class="container py-5">
     <h1 class="mb-4">📊 IP Records Dashboard</h1>
-    <div class="card shadow-sm">
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
             <p><strong>Total IPs in ip_records:</strong> {{ total_ips }}</p>
             <form method="post" action="/delete-ips">
                 <button class="btn btn-danger" type="submit">🗑 Delete old IPs</button>
             </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">🖥 Server Info</h5>
+            <p><strong>CPU Usage:</strong> {{ cpu_percent }}%</p>
+            <p><strong>Memory Usage:</strong> {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</p>
         </div>
     </div>
 </div>
