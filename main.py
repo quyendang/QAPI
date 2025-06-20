@@ -13,6 +13,7 @@ import re
 import json
 import pytz
 from netaddr import IPAddress, IPNetwork
+import psutil
 from fastapi import Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -264,7 +265,21 @@ def homepage(request: Request):
         cursor.close()
         conn.close()
     
-    return templates.TemplateResponse("index.html", {"request": request, "total_ips": total_ips})
+    # Lấy thông tin CPU và Memory
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory()
+    memory_total = round(memory.total / (1024 ** 3), 2)  # GB
+    memory_used = round(memory.used / (1024 ** 3), 2)    # GB
+    memory_percent = memory.percent
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "total_ips": total_ips,
+        "cpu_percent": cpu_percent,
+        "memory_total": memory_total,
+        "memory_used": memory_used,
+        "memory_percent": memory_percent
+    })
 
 @app.post("/delete-ips")
 def delete_ips_from_button():
