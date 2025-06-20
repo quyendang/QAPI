@@ -7,3 +7,4 @@ requests
 netaddr
 jinja2
 aiofiles
+psutil
