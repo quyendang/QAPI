@@ -13,7 +13,12 @@ import re
 import json
 import pytz
 from netaddr import IPAddress, IPNetwork
+from fastapi import Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -245,6 +250,27 @@ scheduler.add_job(check_devices, 'interval', minutes=15)
 scheduler.add_job(check_multiple_hyperliquid_pnls, 'interval', minutes=10)
 scheduler.start()
 
+@app.get("/", response_class=HTMLResponse)
+def homepage(request: Request):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT COUNT(*) FROM ip_records")
+        total_ips = cursor.fetchone()[0]
+    except Exception as e:
+        total_ips = "Error"
+        logging.error(f"Error fetching IP count: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return templates.TemplateResponse("index.html", {"request": request, "total_ips": total_ips})
+
+@app.post("/delete-ips")
+def delete_ips_from_button():
+    delete_old_ips()
+    return RedirectResponse("/", status_code=303)
+    
 @app.get("/country")
 def get_country(countrys: str, proxy: str):
     # Parse the country list from the query parameter
