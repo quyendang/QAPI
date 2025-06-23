@@ -273,7 +273,7 @@ async def add_or_update_device(device: Device):
                 conn.commit()
                 return {"message": f"Device {device.id} updated successfully"}
             else:
-                return {"message": f"No fields to update for device {device.id}"}
+                return {"message": f"No fields to update for device: {device.id}"}
         else:
             # Thêm thiết bị mới
             fields = []
