@@ -48,7 +48,7 @@
             color: #777;
         }
         .old-device {
-            background-color: #ffe6e6;
+            color: #dc3545; /* Màu đỏ cho thiết bị có last_update > 15 phút */
         }
         .btn-delete {
             background-color: #dc3545;
@@ -76,20 +76,20 @@
         }
         .btn-custom-connect {
             background-color: rgba(29, 188, 96, 0.5);
-            border: none; /* Loại bỏ viền */
-            padding: 2px 5px; /* Giảm padding để nút nhỏ hơn */
+            border: none;
+            padding: 2px 5px;
         }
         .btn-custom-connect img {
-            width: 16px; /* Kích thước biểu tượng */
+            width: 16px;
             height: 16px;
         }
         .btn-custom-delete {
             background-color: rgba(248, 40, 48, 0.5);
-            border: none; /* Loại bỏ viền */
-            padding: 2px 5px; /* Giảm padding để nút nhỏ hơn */
+            border: none;
+            padding: 2px 5px;
         }
         .btn-custom-delete img {
-            width: 16px; /* Kích thước biểu tượng */
+            width: 16px;
             height: 16px;
         }
         .account-section {
@@ -123,6 +123,9 @@
         }
         .expiry-date {
             color: #666;
+        }
+        .progress {
+            height: 10px;
         }
     </style>
 </head>
@@ -158,17 +161,50 @@
                 </thead>
                 <tbody>
                     {% for device in devices %}
-                    <tr>
+                    {% set last_update_time = device.last_update|datetime_from_timestamp %}
+                    {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %}
+                    <tr {% if is_old %}class="old-device"{% endif %}>
                         <td>{{ loop.index }}</td>
                         <td>{{ device.country_code or 'N/A' }}</td>
                         <td>{{ device.ip or 'N/A' }}</td>
-                        <td>{{ device.cpu_percent|round(2) if device.cpu_percent is not none else 'N/A' }}</td>
-                        <td>{{ device.ram_used if device.ram_used is not none else 'N/A' }} / {{ device.ram_total if device.ram_total is not none else 'N/A' }} MB</td>
+                        <td>
+                            {% if device.cpu_percent is not none %}
+                            <div class="progress">
+                                <div class="progress-bar {{ 'bg-danger' if device.cpu_percent > 50 else 'bg-success' }}" 
+                                     role="progressbar" 
+                                     style="width: {{ device.cpu_percent }}%" 
+                                     aria-valuenow="{{ device.cpu_percent }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ device.cpu_percent|round(2) }}%
+                                </div>
+                            </div>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if device.ram_used is not none and device.ram_total is not none %}
+                            {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %}
+                            <div class="progress">
+                                <div class="progress-bar {{ 'bg-danger' if ram_percent > 50 else 'bg-success' }}" 
+                                     role="progressbar" 
+                                     style="width: {{ ram_percent }}%" 
+                                     aria-valuenow="{{ ram_percent }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ device.ram_used }} / {{ device.ram_total }} MB
+                                </div>
+                            </div>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
                         <td>{{ device.description or 'N/A' }}</td>
                         <td>
                             {% if device.last_update %}
-                            {{ (device.last_update|datetime_from_timestamp).strftime('%Y-%m-%d %H:%M:%S') }} 
-                            ({{ (device.last_update|datetime_from_timestamp)|time_ago }})
+                            {{ last_update_time.strftime('%Y-%m-%d %H:%M:%S') }} 
+                            ({{ last_update_time|time_ago }})
                             {% else %}
                             N/A
                             {% endif %}
