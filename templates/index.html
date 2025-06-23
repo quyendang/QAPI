@@ -136,7 +136,7 @@
             <p>CPU Usage: {{ cpu_percent }}%</p>
             <p>Memory Usage: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</p>
             <form action="/delete-ips" method="post">
-                <button type="submit">Delete Old IPs</button>
+                <button type="submit" class="btn btn-custom-delete">Delete Old IPs</button>
             </form>
         </div>
 
@@ -176,9 +176,7 @@
                         <td>
                             <form action="/deleteDevice" method="delete">
                                 <input type="hidden" name="id" value="{{ device.id }}">
-                                <button type="submit" class="btn btn-custom-delete">
-                                    <img src="delete.png" alt="Delete">
-                                </button>
+                                <button type="submit" class="btn btn-custom-delete">Delete</button>
                             </form>
                         </td>
                     </tr>
