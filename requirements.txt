@@ -8,3 +8,4 @@ netaddr
 jinja2
 aiofiles
 psutil
+pydantic
