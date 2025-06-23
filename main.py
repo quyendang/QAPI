@@ -37,13 +37,13 @@ def time_ago(dt):
 
     seconds = time_difference.total_seconds()
     if seconds < 60:
-        return f"{int(seconds)} seconds ago"
+        return f"{int(seconds)} s ago"
     elif seconds < 3600:
-        return f"{int(seconds // 60)} minutes ago"
+        return f"{int(seconds // 60)} m ago"
     elif seconds < 86400:
-        return f"{int(seconds // 3600)} hours ago"
+        return f"{int(seconds // 3600)} h ago"
     else:
-        return f"{int(seconds // 86400)} days ago"
+        return f"{int(seconds // 86400)} d ago"
 
 # Cập nhật environment của Jinja2
 environment = Environment()
