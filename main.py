@@ -49,7 +49,7 @@ def time_ago(dt):
 environment = Environment()
 environment.filters['datetime_from_timestamp'] = datetime_from_timestamp
 environment.filters['time_ago'] = time_ago
-templates.env = environment
+
 
 # Định nghĩa model cho dữ liệu thiết bị
 class Device(BaseModel):
@@ -69,6 +69,7 @@ class Device(BaseModel):
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+templates.env = environment
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
