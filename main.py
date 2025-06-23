@@ -88,19 +88,19 @@ def create_tables():
 create_tables()
 
 # Gọi hàm này khi khởi động
-def fetch_uk_ip_ranges():
-    global uk_ip_ranges
-    url = "https://www.ipdeny.com/ipblocks/data/countries/gb.zone"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        uk_ip_ranges = response.text.strip().splitlines()
-        print(f"Loaded {len(uk_ip_ranges)} UK IP ranges")
-    except Exception as e:
-        print(f"Failed to fetch UK IP ranges: {e}")
-        uk_ip_ranges = []
+# def fetch_uk_ip_ranges():
+#     global uk_ip_ranges
+#     url = "https://www.ipdeny.com/ipblocks/data/countries/gb.zone"
+#     try:
+#         response = requests.get(url)
+#         response.raise_for_status()
+#         uk_ip_ranges = response.text.strip().splitlines()
+#         print(f"Loaded {len(uk_ip_ranges)} UK IP ranges")
+#     except Exception as e:
+#         print(f"Failed to fetch UK IP ranges: {e}")
+#         uk_ip_ranges = []
 
-fetch_uk_ip_ranges()
+# fetch_uk_ip_ranges()
 # Hàm kiểm tra devices và gửi thông báo qua Pushover
 def check_devices():
     try:
