@@ -371,7 +371,8 @@ def homepage(request: Request):
         "memory_total": memory_total,
         "memory_used": memory_used,
         "memory_percent": memory_percent,
-        "devices": device_list
+        "devices": device_list,
+        "now": int(datetime.now(pytz.timezone('Asia/Bangkok')).timestamp())
     })
 
 @app.post("/delete-ips")
