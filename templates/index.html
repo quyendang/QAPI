@@ -125,7 +125,7 @@
             color: #666;
         }
         .progress {
-            height: 30px;
+            height: 25px;
         }
     </style>
 </head>
@@ -139,7 +139,7 @@
             <p>CPU Usage: {{ cpu_percent }}%</p>
             <p>Memory Usage: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</p>
             <form action="/delete-ips" method="post">
-                <button type="submit" class="btn btn-custom-delete">Delete Old IPs</button>
+                <button type="submit" class="btn btn-danger">Delete Old IPs</button>
             </form>
         </div>
 
@@ -203,8 +203,7 @@
                         <td>{{ device.description or 'N/A' }}</td>
                         <td>
                             {% if device.last_update %}
-                            {{ last_update_time.strftime('%Y-%m-%d %H:%M:%S') }} 
-                            ({{ last_update_time|time_ago }})
+                            {{ last_update_time|time_ago }}
                             {% else %}
                             N/A
                             {% endif %}
@@ -212,7 +211,7 @@
                         <td>
                             <form action="/deleteDevice" method="delete">
                                 <input type="hidden" name="id" value="{{ device.id }}">
-                                <button type="submit" class="btn btn-custom-delete">Delete</button>
+                                <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
                         </td>
                     </tr>
