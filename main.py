@@ -1,5 +1,6 @@
 import requests
 from fastapi import FastAPI, Query
+from pydantic import BaseModel
 from typing import List
 from collections import defaultdict
 import random
@@ -18,6 +19,23 @@ from fastapi import Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
+# Định nghĩa model cho dữ liệu thiết bị
+class Device(BaseModel):
+    id: str
+    ip: str | None = None
+    country_code: str | None = None
+    ram_total: int | None = None
+    ram_used: int | None = None
+    cpu_percent: float | None = None
+    description: str | None = None
+    last_update: int | None = None
+    counter1: int | None = None
+    counter2: int | None = None
+    counter3: int | None = None
+    counter4: int | None = None
+
+
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 proxy_country_mapping = defaultdict(list)
@@ -40,6 +58,24 @@ def get_db_connection():
 def create_tables():
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Tạo bảng lưu thông tin thiết bị
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS devices (
+        id TEXT PRIMARY KEY,
+        ip TEXT NOT NULL,
+        country_code TEXT,
+        ram_total INTEGER,
+        ram_used INTEGER,
+        cpu_percent DOUBLE PRECISION,
+        description TEXT,
+        last_update INTEGER,
+        counter1 INTEGER,
+        counter2 INTEGER,
+        counter3 INTEGER,
+        counter4 INTEGER
+    )
+    ''')
     
     # Tạo bảng lưu thông tin IP từ API /check
     cursor.execute('''
@@ -181,6 +217,83 @@ scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.add_job(check_devices, 'interval', minutes=15)
 scheduler.start()
 
+
+@app.post("/device")
+async def add_or_update_device(device: Device):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Kiểm tra xem thiết bị đã tồn tại chưa
+        cursor.execute("SELECT id FROM devices WHERE id = %s", (device.id,))
+        exists = cursor.fetchone()
+
+        if exists:
+            # Cập nhật thiết bị nếu đã tồn tại
+            update_fields = []
+            update_values = []
+            for field, value in device.dict(exclude_unset=True).items():
+                if field != "id" and value is not None:
+                    update_fields.append(f"{field} = %s")
+                    update_values.append(value)
+            
+            if update_fields:
+                update_values.append(device.id)
+                query = f"UPDATE devices SET {', '.join(update_fields)} WHERE id = %s"
+                cursor.execute(query, update_values)
+                conn.commit()
+                return {"message": f"Device {device.id} updated successfully"}
+            else:
+                return {"message": f"No fields to update for device {device.id}"}
+        else:
+            # Thêm thiết bị mới
+            fields = []
+            placeholders = []
+            values = []
+            for field, value in device.dict(exclude_unset=True).items():
+                fields.append(field)
+                placeholders.append("%s")
+                values.append(value)
+            
+            query = f"INSERT INTO devices ({', '.join(fields)}) VALUES ({', '.join(placeholders)})"
+            cursor.execute(query, values)
+            conn.commit()
+            return {"message": f"Device {device.id} added successfully"}
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.delete("/deleteDevice")
+async def delete_device(id: str = Query(...)):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Kiểm tra xem thiết bị có tồn tại không
+        cursor.execute("SELECT id FROM devices WHERE id = %s", (id,))
+        exists = cursor.fetchone()
+
+        if not exists:
+            raise HTTPException(status_code=404, detail=f"Device {id} not found")
+
+        # Xóa thiết bị
+        cursor.execute("DELETE FROM devices WHERE id = %s", (id,))
+        conn.commit()
+        return {"message": f"Device {id} deleted successfully"}
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
 @app.get("/", response_class=HTMLResponse)
 def homepage(request: Request):
     conn = get_db_connection()
@@ -188,8 +301,28 @@ def homepage(request: Request):
     try:
         cursor.execute("SELECT COUNT(*) FROM ip_records")
         total_ips = cursor.fetchone()[0]
+        # Lấy danh sách thiết bị
+        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4 FROM devices")
+        devices = cursor.fetchall()
+        device_list = [
+            {
+                "id": row[0],
+                "ip": row[1],
+                "country_code": row[2],
+                "ram_total": row[3],
+                "ram_used": row[4],
+                "cpu_percent": row[5],
+                "description": row[6],
+                "last_update": row[7],
+                "counter1": row[8],
+                "counter2": row[9],
+                "counter3": row[10],
+                "counter4": row[11]
+            } for row in devices
+        ]
     except Exception as e:
         total_ips = "Error"
+        device_list = []
         logging.error(f"Error fetching IP count: {str(e)}")
     finally:
         cursor.close()
@@ -208,7 +341,8 @@ def homepage(request: Request):
         "cpu_percent": cpu_percent,
         "memory_total": memory_total,
         "memory_used": memory_used,
-        "memory_percent": memory_percent
+        "memory_percent": memory_percent,
+        "devices": device_list
     })
 
 @app.post("/delete-ips")
