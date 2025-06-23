@@ -23,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 # Định nghĩa model cho dữ liệu thiết bị
 class Device(BaseModel):
-    id: str
+    id: str  # Bắt buộc, không có giá trị mặc định
     ip: str | None = None
     country_code: str | None = None
     ram_total: int | None = None
@@ -92,7 +92,7 @@ def create_tables():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS devices (
         id TEXT PRIMARY KEY,
-        ip TEXT NOT NULL,
+        ip TEXT,
         country_code TEXT,
         ram_total INTEGER,
         ram_used INTEGER,
