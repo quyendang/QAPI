@@ -12,6 +12,7 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import json
+from jinja2 import Environment
 import pytz
 from netaddr import IPAddress, IPNetwork
 import psutil
@@ -19,6 +20,36 @@ from fastapi import Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
+def datetime_from_timestamp(timestamp):
+    """Chuyển Unix timestamp sang datetime object múi giờ GMT+7."""
+    if timestamp is None:
+        return None
+    gmt_plus_7 = pytz.timezone('Asia/Bangkok')
+    return datetime.fromtimestamp(timestamp, tz=gmt_plus_7)
+
+def time_ago(dt):
+    """Tính toán thời gian 'time ago' từ datetime object."""
+    if dt is None:
+        return "N/A"
+    now = datetime.now(pytz.timezone('Asia/Bangkok'))
+    time_difference = now - dt
+
+    seconds = time_difference.total_seconds()
+    if seconds < 60:
+        return f"{int(seconds)} seconds ago"
+    elif seconds < 3600:
+        return f"{int(seconds // 60)} minutes ago"
+    elif seconds < 86400:
+        return f"{int(seconds // 3600)} hours ago"
+    else:
+        return f"{int(seconds // 86400)} days ago"
+
+# Cập nhật environment của Jinja2
+environment = Environment()
+environment.filters['datetime_from_timestamp'] = datetime_from_timestamp
+environment.filters['time_ago'] = time_ago
+templates.env = environment
 
 # Định nghĩa model cho dữ liệu thiết bị
 class Device(BaseModel):
