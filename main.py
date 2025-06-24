@@ -246,6 +246,45 @@ scheduler.add_job(delete_old_ips, 'interval', hours=12)
 scheduler.add_job(check_devices, 'interval', minutes=15)
 scheduler.start()
 
+@app.get("/device", response_model=List[Device])
+async def get_devices():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Query to fetch all devices
+        cursor.execute("""
+            SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
+                   last_update, counter1, counter2, counter3, counter4 
+            FROM devices
+        """)
+        rows = cursor.fetchall()
+
+        # Convert database rows to list of Device models
+        devices = [
+            Device(
+                id=row[0],
+                ip=row[1],
+                country_code=row[2],
+                ram_total=row[3],
+                ram_used=row[4],
+                cpu_percent=row[5],
+                description=row[6],
+                last_update=row[7],
+                counter1=row[8],
+                counter2=row[9],
+                counter3=row[10],
+                counter4=row[11]
+            ) for row in rows
+        ]
+
+        return devices
+    except Exception as e:
+        logging.error(f"Error fetching devices: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.post("/device")
 async def add_or_update_device(device: Device):
