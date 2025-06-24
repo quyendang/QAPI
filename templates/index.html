@@ -166,7 +166,7 @@
                     {% for device in devices %}
                     {% set last_update_time = device.last_update|datetime_from_timestamp %}
                     {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %}
-                    <tr {% if is_old %}class="offline-bg"{% endif %}>
+                    <tr {% if is_old %}class="table-danger"{% endif %}>
                         <td>{{ loop.index }}</td>
                         <td>{{ device.country_code or 'N/A' }}</td>
                         <td>{{ device.ip or 'N/A' }}</td>
