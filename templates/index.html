@@ -216,6 +216,14 @@
                     </svg>
                   </button>
                 </form>
+                <form action="/restart" method="post" class="d-inline ms-2">
+                  <input type="hidden" name="id" value="{{ device.id }}">
+                  <button type="submit" class="btn btn-warning rounded-circle p-2 lh-1" title="Restart">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z"/>
+                    </svg>
+                  </button>
+                </form>
               </td>
             </tr> {% endfor %} </tbody>
         </table> {% else %} <p>No devices found.</p> {% endif %}
