@@ -35,6 +35,7 @@ class Device(BaseModel):
     counter2: int | None = None
     counter3: int | None = None
     counter4: int | None = None
+    restart: bool = False
 
 
 app = FastAPI()
@@ -102,7 +103,8 @@ def create_tables():
         counter1 INTEGER,
         counter2 INTEGER,
         counter3 INTEGER,
-        counter4 INTEGER
+        counter4 INTEGER,
+        restart BOOLEAN DEFAULT FALSE
     )
     ''')
     
@@ -145,6 +147,18 @@ def create_tables():
     cursor.execute("""
     ALTER TABLE ip_records 
     ADD COLUMN IF NOT EXISTS groupId TEXT
+    """)
+    # Thêm cột restart nếu chưa tồn tại và đặt giá trị mặc định là FALSE
+    cursor.execute("""
+    ALTER TABLE devices 
+    ADD COLUMN IF NOT EXISTS restart BOOLEAN DEFAULT FALSE
+    """)
+
+    # Cập nhật các bản ghi hiện có để đảm bảo restart không NULL
+    cursor.execute("""
+    UPDATE devices 
+    SET restart = FALSE 
+    WHERE restart IS NULL
     """)
     conn.commit()
     conn.close()
@@ -255,7 +269,7 @@ async def get_devices():
         # Query to fetch all devices
         cursor.execute("""
             SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                   last_update, counter1, counter2, counter3, counter4 
+                   last_update, counter1, counter2, counter3, counter4, restart 
             FROM devices
         """)
         rows = cursor.fetchall()
@@ -274,7 +288,8 @@ async def get_devices():
                 counter1=row[8],
                 counter2=row[9],
                 counter3=row[10],
-                counter4=row[11]
+                counter4=row[11],
+                restart=row[12]
             ) for row in rows
         ]
 
@@ -285,7 +300,7 @@ async def get_devices():
     finally:
         cursor.close()
         conn.close()
-
+        
 @app.post("/device")
 async def add_or_update_device(device: Device):
     conn = get_db_connection()
@@ -301,10 +316,10 @@ async def add_or_update_device(device: Device):
             update_fields = []
             update_values = []
             for field, value in device.dict(exclude_unset=True).items():
-                if field != "id" and value is not None:
+                if field != "id":
                     update_fields.append(f"{field} = %s")
                     update_values.append(value)
-            
+
             if update_fields:
                 update_values.append(device.id)
                 query = f"UPDATE devices SET {', '.join(update_fields)} WHERE id = %s"
@@ -322,7 +337,7 @@ async def add_or_update_device(device: Device):
                 fields.append(field)
                 placeholders.append("%s")
                 values.append(value)
-            
+
             query = f"INSERT INTO devices ({', '.join(fields)}) VALUES ({', '.join(placeholders)})"
             cursor.execute(query, values)
             conn.commit()
@@ -370,7 +385,7 @@ def homepage(request: Request):
         cursor.execute("SELECT COUNT(*) FROM ip_records")
         total_ips = cursor.fetchone()[0]
         # Lấy danh sách thiết bị
-        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4 FROM devices")
+        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4, restart FROM devices")
         devices = cursor.fetchall()
         device_list = [
             {
@@ -385,7 +400,8 @@ def homepage(request: Request):
                 "counter1": row[8],
                 "counter2": row[9],
                 "counter3": row[10],
-                "counter4": row[11]
+                "counter4": row[11],
+                "restart": row[12]
             } for row in devices
         ]
     except Exception as e:
@@ -395,7 +411,7 @@ def homepage(request: Request):
     finally:
         cursor.close()
         conn.close()
-    
+
     # Lấy thông tin CPU và Memory
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
