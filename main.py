@@ -1,7 +1,7 @@
 import requests
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from collections import defaultdict
 import random
 from datetime import datetime, timedelta
