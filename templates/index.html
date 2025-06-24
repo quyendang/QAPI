@@ -170,7 +170,7 @@
                         <td>{{ device.ip or 'N/A' }}</td>
                         <td>
                             {% if device.ip is not none %}
-                            <button type="button" onclick="createRDPFile('${device.ip}')" class="btn btn-primary">RDP</button>
+                            <button type="button" onclick="createRDPFile('${device.ip}')" class="btn btn-primary btn-xs">RDP</button>
                             {% else %}
                             N/A
                             {% endif %}
@@ -219,7 +219,7 @@
                         <td>
                             <form action="/deleteDevice" method="delete">
                                 <input type="hidden" name="id" value="{{ device.id }}">
-                                <button type="submit" class="btn btn-danger">Delete</button>
+                                <button type="submit" class="btn btn-danger btn-xs">Delete</button>
                             </form>
                         </td>
                     </tr>
