@@ -210,16 +210,14 @@
               <td>
                 <form action="/deleteDevice" method="delete">
                   <input type="hidden" name="id" value="{{ device.id }}">
-                  <button type="submit" class="btn btn-danger rounded-circle p-2 lh-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                  <button class="btn btn-danger d-inline-flex align-items-center" type="submit">Delete <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
                       <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
                     </svg>
                   </button>
                 </form>
                 <form action="/restart" method="post">
                   <input type="hidden" name="id" value="{{ device.id }}">
-                  <button type="submit" class="btn btn-warning rounded-circle p-2 lh-1" title="Restart">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                  <button class="btn btn-outline-warning d-inline-flex align-items-center" type="submit">Restart <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
                       <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z"/>
                     </svg>
                   </button>
