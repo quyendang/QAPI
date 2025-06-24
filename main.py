@@ -261,22 +261,22 @@ scheduler.add_job(check_devices, 'interval', minutes=15)
 scheduler.start()
 
 @app.get("/device", response_model=List[Device])
-async def get_devices():
+async def get_devices(id: Optional[str] = Query(None)):
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # Query to fetch all devices
-        cursor.execute("""
-            SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                   last_update, counter1, counter2, counter3, counter4, restart 
-            FROM devices
-        """)
-        rows = cursor.fetchall()
-
-        # Convert database rows to list of Device models
-        devices = [
-            Device(
+        if id:
+            # Lấy thông tin thiết bị cụ thể theo id
+            cursor.execute("""
+                SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
+                       last_update, counter1, counter2, counter3, counter4, restart 
+                FROM devices WHERE id = %s
+            """, (id,))
+            row = cursor.fetchone()
+            if not row:
+                return []  # Trả về danh sách rỗng nếu không tìm thấy
+            return [Device(
                 id=row[0],
                 ip=row[1],
                 country_code=row[2],
@@ -290,10 +290,33 @@ async def get_devices():
                 counter3=row[10],
                 counter4=row[11],
                 restart=row[12]
-            ) for row in rows
-        ]
-
-        return devices
+            )]
+        else:
+            # Lấy toàn bộ danh sách thiết bị
+            cursor.execute("""
+                SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
+                       last_update, counter1, counter2, counter3, counter4, restart 
+                FROM devices
+            """)
+            rows = cursor.fetchall()
+            devices = [
+                Device(
+                    id=row[0],
+                    ip=row[1],
+                    country_code=row[2],
+                    ram_total=row[3],
+                    ram_used=row[4],
+                    cpu_percent=row[5],
+                    description=row[6],
+                    last_update=row[7],
+                    counter1=row[8],
+                    counter2=row[9],
+                    counter3=row[10],
+                    counter4=row[11],
+                    restart=row[12]
+                ) for row in rows
+            ]
+            return devices
     except Exception as e:
         logging.error(f"Error fetching devices: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -301,7 +324,7 @@ async def get_devices():
         cursor.close()
         conn.close()
         
-@app.post("/device")
+@app.post("/device", response_model=List[Device])
 async def add_or_update_device(device: Device):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -325,9 +348,58 @@ async def add_or_update_device(device: Device):
                 query = f"UPDATE devices SET {', '.join(update_fields)} WHERE id = %s"
                 cursor.execute(query, update_values)
                 conn.commit()
-                return {"message": f"Device {device.id} updated successfully"}
+
+                # Lấy thông tin thiết bị sau khi cập nhật
+                cursor.execute("""
+                    SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
+                           last_update, counter1, counter2, counter3, counter4, restart 
+                    FROM devices WHERE id = %s
+                """, (device.id,))
+                row = cursor.fetchone()
+                if row:
+                    return [Device(
+                        id=row[0],
+                        ip=row[1],
+                        country_code=row[2],
+                        ram_total=row[3],
+                        ram_used=row[4],
+                        cpu_percent=row[5],
+                        description=row[6],
+                        last_update=row[7],
+                        counter1=row[8],
+                        counter2=row[9],
+                        counter3=row[10],
+                        counter4=row[11],
+                        restart=row[12]
+                    )]
+                else:
+                    raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
             else:
-                return {"message": f"No fields to update for device: {device.id}"}
+                # Nếu không có trường nào để cập nhật, trả về thông tin thiết bị hiện tại
+                cursor.execute("""
+                    SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
+                           last_update, counter1, counter2, counter3, counter4, restart 
+                    FROM devices WHERE id = %s
+                """, (device.id,))
+                row = cursor.fetchone()
+                if row:
+                    return [Device(
+                        id=row[0],
+                        ip=row[1],
+                        country_code=row[2],
+                        ram_total=row[3],
+                        ram_used=row[4],
+                        cpu_percent=row[5],
+                        description=row[6],
+                        last_update=row[7],
+                        counter1=row[8],
+                        counter2=row[9],
+                        counter3=row[10],
+                        counter4=row[11],
+                        restart=row[12]
+                    )]
+                else:
+                    raise HTTPException(status_code=404, detail=f"Device {device.id} not found")
         else:
             # Thêm thiết bị mới
             fields = []
@@ -338,10 +410,25 @@ async def add_or_update_device(device: Device):
                 placeholders.append("%s")
                 values.append(value)
 
-            query = f"INSERT INTO devices ({', '.join(fields)}) VALUES ({', '.join(placeholders)})"
+            query = f"INSERT INTO devices ({', '.join(fields)}) VALUES ({', '.join(placeholders)}) RETURNING *"
             cursor.execute(query, values)
+            row = cursor.fetchone()
             conn.commit()
-            return {"message": f"Device {device.id} added successfully"}
+            return [Device(
+                id=row[0],
+                ip=row[1],
+                country_code=row[2],
+                ram_total=row[3],
+                ram_used=row[4],
+                cpu_percent=row[5],
+                description=row[6],
+                last_update=row[7],
+                counter1=row[8],
+                counter2=row[9],
+                counter3=row[10],
+                counter4=row[11],
+                restart=row[12]
+            )]
     except Exception as e:
         conn.rollback()
         logging.error(f"Error occurred: {str(e)}")
@@ -350,7 +437,7 @@ async def add_or_update_device(device: Device):
         cursor.close()
         conn.close()
 
-@app.delete("/deleteDevice")
+@app.delete("/device")
 async def delete_device(id: str = Query(...)):
     conn = get_db_connection()
     cursor = conn.cursor()
