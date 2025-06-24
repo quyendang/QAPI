@@ -152,7 +152,9 @@
       }
 
       .progress {
-        height: 25px;
+          border-radius: 3px;
+          height: 10px;
+          margin-top:7px;
       }
 
       .offline-bg {
@@ -197,12 +199,12 @@
                 </button> {% else %} N/A {% endif %} </td>
               <td> {% if device.cpu_percent is not none %} <div class="progress">
                   <div class="progress-bar progress-bar-striped {{ 'bg-danger' if device.cpu_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ device.cpu_percent|round(2) }}%
+                
                   </div>
                 </div> {% else %} N/A {% endif %} </td>
               <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <div class="progress">
                   <div class="progress-bar progress-bar-striped {{ 'bg-danger' if ram_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ device.ram_used }} / {{ device.ram_total }} MB
+                   
                   </div>
                 </div> {% else %} N/A {% endif %} </td>
               <td>{{ device.description or 'N/A' }}</td>
