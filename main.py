@@ -431,7 +431,7 @@ async def add_or_update_device(device: Device):
             )]
     except Exception as e:
         conn.rollback()
-        logging.error(f"Error occurred: {str(e)}")
+        logging.error(f"Error ocurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
