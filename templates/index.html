@@ -195,12 +195,12 @@
                     <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
                   </svg>
                 </button> {% else %} N/A {% endif %} </td>
-              <td> {% if device.cpu_percent is not none %} <div class="progress" style="background-color: {{ '#df6e69' if cpu_percent > 50 else '#78c375'}}">
+              <td> {% if device.cpu_percent is not none %} <div class="progress">
                   <div class="progress-bar progress-bar-striped {{ 'bg-danger' if device.cpu_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100">
                     {{ device.cpu_percent|round(2) }}%
                   </div>
                 </div> {% else %} N/A {% endif %} </td>
-              <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <div class="progress" style="background-color: {{ '#df6e69' if ram_percent > 50 else '#78c375'}}">
+              <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <div class="progress">
                   <div class="progress-bar progress-bar-striped {{ 'bg-danger' if ram_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100">
                     {{ device.ram_used }} / {{ device.ram_total }} MB
                   </div>
