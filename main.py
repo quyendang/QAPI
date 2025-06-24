@@ -56,13 +56,13 @@ def time_ago(dt):
 
     seconds = time_difference.total_seconds()
     if seconds < 60:
-        return f"{int(seconds)} seconds ago"
+        return f"{int(seconds)}s"
     elif seconds < 3600:
-        return f"{int(seconds // 60)} minutes ago"
+        return f"{int(seconds // 60)}m"
     elif seconds < 86400:
-        return f"{int(seconds // 3600)} hours ago"
+        return f"{int(seconds // 3600)}h"
     else:
-        return f"{int(seconds // 86400)} days ago"
+        return f"{int(seconds // 86400)}d"
 
 # Thêm các filter vào environment của Jinja2Templates
 templates.env.filters['datetime_from_timestamp'] = datetime_from_timestamp
