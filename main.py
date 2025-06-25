@@ -21,20 +21,20 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
 
-# Định nghĩa model cho dữ liệu thiết bị
 class Device(BaseModel):
     id: str  # Bắt buộc, không có giá trị mặc định
     ip: str | None = None
     country_code: str | None = None
-    ram_total: int | None = None
-    ram_used: int | None = None
-    cpu_percent: float | None = None
+    ram_total: int | None = 0
+    ram_used: int | None = 0
+    cpu_percent: float | None = 0
     description: str | None = None
     last_update: int | None = None
-    counter1: int | None = None
-    counter2: int | None = None
-    counter3: int | None = None
-    counter4: int | None = None
+    counter1: int | None = 0
+    counter2: int | None = 0
+    counter3: int | None = 0
+    counter4: int | None = 0
+    runtime: int | None = 0
     restart: bool = False
 
 
@@ -95,15 +95,16 @@ def create_tables():
         id TEXT PRIMARY KEY,
         ip TEXT,
         country_code TEXT,
-        ram_total INTEGER,
-        ram_used INTEGER,
-        cpu_percent DOUBLE PRECISION,
+        ram_total INTEGER DEFAULT 0,
+        ram_used INTEGER DEFAULT 0,
+        cpu_percent DOUBLE PRECISION DEFAULT 0,
         description TEXT,
         last_update INTEGER,
-        counter1 INTEGER,
-        counter2 INTEGER,
-        counter3 INTEGER,
-        counter4 INTEGER,
+        counter1 INTEGER DEFAULT 0,
+        counter2 INTEGER DEFAULT 0,
+        counter3 INTEGER DEFAULT 0,
+        counter4 INTEGER DEFAULT 0,
+        runtime INTEGER DEFAULT 0,
         restart BOOLEAN DEFAULT FALSE
     )
     ''')
@@ -148,17 +149,24 @@ def create_tables():
     ALTER TABLE ip_records 
     ADD COLUMN IF NOT EXISTS groupId TEXT
     """)
-    # Thêm cột restart nếu chưa tồn tại và đặt giá trị mặc định là FALSE
+    # Thêm cột runtime nếu chưa tồn tại và đặt giá trị mặc định là 0
     cursor.execute("""
     ALTER TABLE devices 
-    ADD COLUMN IF NOT EXISTS restart BOOLEAN DEFAULT FALSE
+    ADD COLUMN IF NOT EXISTS runtime INTEGER DEFAULT 0
     """)
 
-    # Cập nhật các bản ghi hiện có để đảm bảo restart không NULL
+    # Cập nhật các bản ghi hiện có để đảm bảo các cột có giá trị mặc định
     cursor.execute("""
     UPDATE devices 
-    SET restart = FALSE 
-    WHERE restart IS NULL
+    SET ram_total = COALESCE(ram_total, 0),
+        ram_used = COALESCE(ram_used, 0),
+        cpu_percent = COALESCE(cpu_percent, 0),
+        counter1 = COALESCE(counter1, 0),
+        counter2 = COALESCE(counter2, 0),
+        counter3 = COALESCE(counter3, 0),
+        counter4 = COALESCE(counter4, 0),
+        runtime = COALESCE(runtime, 0),
+        restart = COALESCE(restart, FALSE)
     """)
     conn.commit()
     conn.close()
@@ -267,15 +275,14 @@ async def get_devices(id: Optional[str] = Query(None)):
 
     try:
         if id:
-            # Lấy thông tin thiết bị cụ thể theo id
             cursor.execute("""
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                       last_update, counter1, counter2, counter3, counter4, restart 
+                       last_update, counter1, counter2, counter3, counter4, runtime, restart 
                 FROM devices WHERE id = %s
             """, (id,))
             row = cursor.fetchone()
             if not row:
-                return []  # Trả về danh sách rỗng nếu không tìm thấy
+                return []
             return [Device(
                 id=row[0],
                 ip=row[1],
@@ -289,13 +296,13 @@ async def get_devices(id: Optional[str] = Query(None)):
                 counter2=row[9],
                 counter3=row[10],
                 counter4=row[11],
-                restart=row[12]
+                runtime=row[12],
+                restart=row[13]
             )]
         else:
-            # Lấy toàn bộ danh sách thiết bị
             cursor.execute("""
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                       last_update, counter1, counter2, counter3, counter4, restart 
+                       last_update, counter1, counter2, counter3, counter4, runtime, restart 
                 FROM devices
             """)
             rows = cursor.fetchall()
@@ -313,7 +320,8 @@ async def get_devices(id: Optional[str] = Query(None)):
                     counter2=row[9],
                     counter3=row[10],
                     counter4=row[11],
-                    restart=row[12]
+                    runtime=row[12],
+                    restart=row[13]
                 ) for row in rows
             ]
             return devices
@@ -330,6 +338,11 @@ async def add_or_update_device(device: Device):
     cursor = conn.cursor()
 
     try:
+        # Tự động cập nhật last_update
+        current_timestamp = int(datetime.now(pytz.timezone('Asia/Bangkok')).timestamp())
+        device_dict = device.dict(exclude_unset=True)
+        device_dict['last_update'] = current_timestamp
+
         # Kiểm tra xem thiết bị đã tồn tại chưa
         cursor.execute("SELECT id FROM devices WHERE id = %s", (device.id,))
         exists = cursor.fetchone()
@@ -338,7 +351,7 @@ async def add_or_update_device(device: Device):
             # Cập nhật thiết bị nếu đã tồn tại
             update_fields = []
             update_values = []
-            for field, value in device.dict(exclude_unset=True).items():
+            for field, value in device_dict.items():
                 if field != "id":
                     update_fields.append(f"{field} = %s")
                     update_values.append(value)
@@ -349,10 +362,9 @@ async def add_or_update_device(device: Device):
                 cursor.execute(query, update_values)
                 conn.commit()
 
-                # Lấy thông tin thiết bị sau khi cập nhật
                 cursor.execute("""
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                           last_update, counter1, counter2, counter3, counter4, restart 
+                           last_update, counter1, counter2, counter3, counter4, runtime, restart 
                     FROM devices WHERE id = %s
                 """, (device.id,))
                 row = cursor.fetchone()
@@ -370,15 +382,15 @@ async def add_or_update_device(device: Device):
                         counter2=row[9],
                         counter3=row[10],
                         counter4=row[11],
-                        restart=row[12]
+                        runtime=row[12],
+                        restart=row[13]
                     )]
                 else:
                     raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
             else:
-                # Nếu không có trường nào để cập nhật, trả về thông tin thiết bị hiện tại
                 cursor.execute("""
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                           last_update, counter1, counter2, counter3, counter4, restart 
+                           last_update, counter1, counter2, counter3, counter4, runtime, restart 
                     FROM devices WHERE id = %s
                 """, (device.id,))
                 row = cursor.fetchone()
@@ -396,7 +408,8 @@ async def add_or_update_device(device: Device):
                         counter2=row[9],
                         counter3=row[10],
                         counter4=row[11],
-                        restart=row[12]
+                        runtime=row[12],
+                        restart=row[13]
                     )]
                 else:
                     raise HTTPException(status_code=404, detail=f"Device {device.id} not found")
@@ -405,7 +418,7 @@ async def add_or_update_device(device: Device):
             fields = []
             placeholders = []
             values = []
-            for field, value in device.dict(exclude_unset=True).items():
+            for field, value in device_dict.items():
                 fields.append(field)
                 placeholders.append("%s")
                 values.append(value)
@@ -427,16 +440,17 @@ async def add_or_update_device(device: Device):
                 counter2=row[9],
                 counter3=row[10],
                 counter4=row[11],
-                restart=row[12]
+                runtime=row[12],
+                restart=row[13]
             )]
     except Exception as e:
         conn.rollback()
-        logging.error(f"Error ocurred: {str(e)}")
+        logging.error(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conn.close()
-
+        
 @app.delete("/device")
 async def delete_device(id: str = Query(...)):
     conn = get_db_connection()
@@ -465,14 +479,13 @@ async def delete_device(id: str = Query(...)):
 
 
 @app.get("/", response_class=HTMLResponse)
-def homepage(request: Request):
+async def homepage(request: Request):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT COUNT(*) FROM ip_records")
         total_ips = cursor.fetchone()[0]
-        # Lấy danh sách thiết bị
-        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4, restart FROM devices")
+        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4, runtime, restart FROM devices")
         devices = cursor.fetchall()
         device_list = [
             {
@@ -488,7 +501,8 @@ def homepage(request: Request):
                 "counter2": row[9],
                 "counter3": row[10],
                 "counter4": row[11],
-                "restart": row[12]
+                "runtime": row[12],
+                "restart": row[13]
             } for row in devices
         ]
     except Exception as e:
@@ -499,11 +513,10 @@ def homepage(request: Request):
         cursor.close()
         conn.close()
 
-    # Lấy thông tin CPU và Memory
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
-    memory_total = round(memory.total / (1024 ** 3), 2)  # GB
-    memory_used = round(memory.used / (1024 ** 3), 2)    # GB
+    memory_total = round(memory.total / (1024 ** 3), 2)
+    memory_used = round(memory.used / (1024 ** 3), 2)
     memory_percent = memory.percent
 
     return templates.TemplateResponse("index.html", {
