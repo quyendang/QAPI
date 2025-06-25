@@ -283,8 +283,15 @@ session bpp:i:32
         form.addEventListener('submit', function(e) {
           e.preventDefault();
           const id = this.querySelector('input[name="id"]').value;
-          fetch(`/device?id=${encodeURIComponent(id)}&restart=true`, {
-            method: 'PATCH'
+          fetch(`/device`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: id,
+                restart: true
+            })
           }).then(response => response.json()).then(data => {
             alert(data.message);
             window.location.reload();
