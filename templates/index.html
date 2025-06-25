@@ -192,7 +192,7 @@
           </thead>
           <tbody> {% for device in devices %} {% set last_update_time = device.last_update|datetime_from_timestamp %} {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %} <tr {% if is_old %}class="table-danger" {% endif %}>
               <td>{{ loop.index }}</td>
-              <td><span class="fi fi-{{ device.country_code|lower }} fis"></span> {{ device.country_code or 'N/A' }}</td>
+              <td><span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}</td>
               <td>{{ device.ip or 'N/A' }}</td>
               <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}')" class="btn btn-primary btn-sm d-inline-flex align-items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
