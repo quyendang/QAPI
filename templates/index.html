@@ -183,7 +183,8 @@
               <th>Connect</th>
               <th>CPU Usage (%)</th>
               <th>RAM (Used/Total)</th>
-              <th>Description</th>
+              <th>Client</th>
+              <th>Runtime</th>
               <th>Last Update</th>
               <th>Action</th>
             </tr>
@@ -207,7 +208,8 @@
                    
                   </div>
                 </div> {% else %} N/A {% endif %} </td>
-              <td>{{ device.description or 'N/A' }}</td>
+              <td>{{ device.id or 'N/A' }}</td>
+              <td>{{ device.runtime or 'N/A' }}</td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
               <td>
                 <div class="d-flex gap-2">
