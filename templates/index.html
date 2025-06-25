@@ -211,7 +211,7 @@
                   </div>
                 </div> {% else %} N/A {% endif %} </td>
               <td>{{ device.id or 'N/A' }}</td>
-              <td>{{ device.counter2 or 'N/A' }}/{{ device.counter3 or 'N/A' }}/{{ device.counter4 or 'N/A' }}/{{ device.counter5 or 'N/A' }}</td>
+              <td>{{ device.counter2 or 'N/A' }}/{{ device.counter3 or 'N/A' }}/{{ device.counter4 or 'N/A' }}/{{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} </td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
               <td>
