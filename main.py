@@ -34,6 +34,7 @@ class Device(BaseModel):
     counter2: int | None = 0
     counter3: int | None = 0
     counter4: int | None = 0
+    counter5: int | None = 0
     runtime: int | None = 0
     restart: bool = False
 
@@ -114,6 +115,7 @@ def create_tables():
         counter2 INTEGER DEFAULT 0,
         counter3 INTEGER DEFAULT 0,
         counter4 INTEGER DEFAULT 0,
+        counter5 INTEGER DEFAULT 0,
         runtime INTEGER DEFAULT 0,
         restart BOOLEAN DEFAULT FALSE
     )
@@ -164,6 +166,11 @@ def create_tables():
     ALTER TABLE devices 
     ADD COLUMN IF NOT EXISTS runtime INTEGER DEFAULT 0
     """)
+    # Thêm cột counter5 nếu chưa tồn tại và đặt giá trị mặc định là 0
+    cursor.execute("""
+    ALTER TABLE devices 
+    ADD COLUMN IF NOT EXISTS counter5 INTEGER DEFAULT 0
+    """)
 
     # Cập nhật các bản ghi hiện có để đảm bảo các cột có giá trị mặc định
     cursor.execute("""
@@ -175,6 +182,7 @@ def create_tables():
         counter2 = COALESCE(counter2, 0),
         counter3 = COALESCE(counter3, 0),
         counter4 = COALESCE(counter4, 0),
+        counter5 = COALESCE(counter5, 0),
         runtime = COALESCE(runtime, 0),
         restart = COALESCE(restart, FALSE)
     """)
@@ -287,7 +295,7 @@ async def get_devices(id: Optional[str] = Query(None)):
         if id:
             cursor.execute("""
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                       last_update, counter1, counter2, counter3, counter4, runtime, restart 
+                       last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart 
                 FROM devices WHERE id = %s
             """, (id,))
             row = cursor.fetchone()
@@ -306,13 +314,14 @@ async def get_devices(id: Optional[str] = Query(None)):
                 counter2=row[9],
                 counter3=row[10],
                 counter4=row[11],
-                runtime=row[12],
-                restart=row[13]
+                counter5=row[12],
+                runtime=row[13],
+                restart=row[14]
             )]
         else:
             cursor.execute("""
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                       last_update, counter1, counter2, counter3, counter4, runtime, restart 
+                       last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart 
                 FROM devices
             """)
             rows = cursor.fetchall()
@@ -330,8 +339,9 @@ async def get_devices(id: Optional[str] = Query(None)):
                     counter2=row[9],
                     counter3=row[10],
                     counter4=row[11],
-                    runtime=row[12],
-                    restart=row[13]
+                    counter5=row[12],
+                    runtime=row[13],
+                    restart=row[14]
                 ) for row in rows
             ]
             return devices
@@ -374,7 +384,7 @@ async def add_or_update_device(device: Device):
 
                 cursor.execute("""
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                           last_update, counter1, counter2, counter3, counter4, runtime, restart 
+                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart 
                     FROM devices WHERE id = %s
                 """, (device.id,))
                 row = cursor.fetchone()
@@ -392,15 +402,16 @@ async def add_or_update_device(device: Device):
                         counter2=row[9],
                         counter3=row[10],
                         counter4=row[11],
-                        runtime=row[12],
-                        restart=row[13]
+                        counter5=row[12],
+                        runtime=row[13],
+                        restart=row[14]
                     )]
                 else:
                     raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
             else:
                 cursor.execute("""
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                           last_update, counter1, counter2, counter3, counter4, runtime, restart 
+                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart 
                     FROM devices WHERE id = %s
                 """, (device.id,))
                 row = cursor.fetchone()
@@ -418,8 +429,9 @@ async def add_or_update_device(device: Device):
                         counter2=row[9],
                         counter3=row[10],
                         counter4=row[11],
-                        runtime=row[12],
-                        restart=row[13]
+                        counter5=row[12],
+                        runtime=row[13],
+                        restart=row[14]
                     )]
                 else:
                     raise HTTPException(status_code=404, detail=f"Device {device.id} not found")
@@ -450,8 +462,9 @@ async def add_or_update_device(device: Device):
                 counter2=row[9],
                 counter3=row[10],
                 counter4=row[11],
-                runtime=row[12],
-                restart=row[13]
+                counter5=row[12],
+                runtime=row[13],
+                restart=row[14]
             )]
     except Exception as e:
         conn.rollback()
@@ -490,7 +503,7 @@ async def patch_device(device: Device):
 
         cursor.execute("""
             SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
-                   last_update, counter1, counter2, counter3, counter4, runtime, restart 
+                   last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart 
             FROM devices WHERE id = %s
         """, (device.id,))
         row = cursor.fetchone()
@@ -498,7 +511,7 @@ async def patch_device(device: Device):
             return [Device(
                 id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                 cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
-                counter2=row[9], counter3=row[10], counter4=row[11], runtime=row[12], restart=row[13]
+                counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12], runtime=row[13], restart=row[14]
             )]
         else:
             raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
@@ -535,8 +548,6 @@ async def delete_device(id: str = Query(...)):
         cursor.close()
         conn.close()
 
-
-
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     conn = get_db_connection()
@@ -544,7 +555,7 @@ async def homepage(request: Request):
     try:
         cursor.execute("SELECT COUNT(*) FROM ip_records")
         total_ips = cursor.fetchone()[0]
-        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4, runtime, restart FROM devices")
+        cursor.execute("SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart FROM devices")
         devices = cursor.fetchall()
         device_list = [
             {
@@ -560,8 +571,9 @@ async def homepage(request: Request):
                 "counter2": row[9],
                 "counter3": row[10],
                 "counter4": row[11],
-                "runtime": row[12],
-                "restart": row[13]
+                "counter5": row[12],
+                "runtime": row[13],
+                "restart": row[14]
             } for row in devices
         ]
     except Exception as e:
