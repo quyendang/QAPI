@@ -65,9 +65,19 @@ def time_ago(dt):
     else:
         return f"{int(seconds // 86400)}d"
 
+def run_time(seconds):
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    elif seconds < 3600:
+        return f"{int(seconds // 60)}m"
+    elif seconds < 86400:
+        return f"{int(seconds // 3600)}h"
+    else:
+        return f"{int(seconds // 86400)}d"
 # Thêm các filter vào environment của Jinja2Templates
 templates.env.filters['datetime_from_timestamp'] = datetime_from_timestamp
 templates.env.filters['time_ago'] = time_ago
+templates.env.filters['run_time'] = run_time
 proxy_country_mapping = defaultdict(list)
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
