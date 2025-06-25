@@ -258,6 +258,63 @@ def check_devices():
     except Exception as e:
         logging.error(f"Error in check_devices: {str(e)}")
 
+def check_outdated_devices():
+    outdated_ips = []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Lấy thời gian hiện tại (Unix timestamp)
+        current_timestamp = int(datetime.now(pytz.timezone('Asia/Bangkok')).timestamp())
+        # Thời gian ngưỡng: 15 phút trước
+        time_threshold = current_timestamp - 15 * 60  # 15 phút tính bằng giây
+
+        # Truy vấn các thiết bị có last_update < time_threshold
+        cursor.execute("""
+            SELECT id, ip, last_update 
+            FROM devices 
+            WHERE last_update < %s OR last_update IS NULL
+        """, (time_threshold,))
+        rows = cursor.fetchall()
+
+        if rows:
+            for row in rows:
+                device_id, ip, last_update = row
+                if ip:  # Chỉ thêm IP nếu nó không phải NULL
+                    outdated_ips.append(ip)
+                last_update_str = (
+                    datetime.fromtimestamp(last_update, pytz.timezone('Asia/Bangkok')).strftime('%Y-%m-%d %H:%M:%S')
+                    if last_update else "Never updated"
+                )
+                logging.info(f"Device ID: {device_id}, IP: {ip}, Last Update: {last_update_str}")
+            logging.info(f"Outdated device IPs: {outdated_ips}")
+            message = f"⛔ {len(outdated_ips)} devices offline : {', '.join(outdated_ips)}"
+            pushover_data = {
+                "token": "ah2hby41xn2viu41syq295ipeoss4e",
+                "user": "uqyjaksy71vin1ftoafoujqqg1s8rz",
+                "sound": "anhoi",
+                "title": "Device Warning",
+                "message": message
+            }
+            
+            response = requests.post(
+                "https://api.pushover.net/1/messages.json",
+                data=pushover_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            
+            if response.status_code == 200:
+                logging.info(f"Pushover notification sent successfully: {message}")
+            else:
+                logging.error(f"Failed to send Pushover notification: {response.text}")
+        else:
+            logging.info("No outdated devices found. Outdated device IPs: []")
+
+    except Exception as e:
+        logging.error(f"Error in check_outdated_devices: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
 # Hàm xóa IP đã quá hạn (hơn 2 ngày) khỏi ip_records
 def delete_old_ips():
     conn = get_db_connection()
