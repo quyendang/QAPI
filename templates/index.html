@@ -267,8 +267,24 @@ session bpp:i:32
         form.addEventListener('submit', function(e) {
           e.preventDefault();
           const id = this.querySelector('input[name="id"]').value;
-          fetch(`/deleteDevice?id=${encodeURIComponent(id)}`, {
+          fetch(`/device?id=${encodeURIComponent(id)}`, {
             method: 'DELETE'
+          }).then(response => response.json()).then(data => {
+            alert(data.message);
+            window.location.reload();
+          }).catch(error => {
+            alert('Error: ' + error.message);
+          });
+        });
+      });
+
+
+      document.querySelectorAll('form[method="patch"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const id = this.querySelector('input[name="id"]').value;
+          fetch(`/device?id=${encodeURIComponent(id)}&restart=true`, {
+            method: 'PATCH'
           }).then(response => response.json()).then(data => {
             alert(data.message);
             window.location.reload();
