@@ -460,6 +460,80 @@ async def add_or_update_device(device: Device):
     finally:
         cursor.close()
         conn.close()
+
+@app.patch("/device", response_model=List[Device])
+async def patch_device(
+    id: str = Form(...),
+    ip: Optional[str] = Form(None),
+    country_code: Optional[str] = Form(None),
+    ram_total: Optional[int] = Form(None),
+    ram_used: Optional[int] = Form(None),
+    cpu_percent: Optional[float] = Form(None),
+    description: Optional[str] = Form(None),
+    counter1: Optional[int] = Form(None),
+    counter2: Optional[int] = Form(None),
+    counter3: Optional[int] = Form(None),
+    counter4: Optional[int] = Form(None),
+    runtime: Optional[int] = Form(None),
+    restart: Optional[bool] = Form(None)
+):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM devices WHERE id = %s", (id,))
+        exists = cursor.fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail=f"Device {id} not found")
+
+        update_fields = []
+        update_values = []
+        device_dict = {
+            "ip": ip,
+            "country_code": country_code,
+            "ram_total": ram_total,
+            "ram_used": ram_used,
+            "cpu_percent": cpu_percent,
+            "description": description,
+            "counter1": counter1,
+            "counter2": counter2,
+            "counter3": counter3,
+            "counter4": counter4,
+            "runtime": runtime,
+            "restart": restart,
+            "last_update": int(datetime.now(pytz.timezone('Asia/Bangkok')).timestamp())
+        }
+        for field, value in device_dict.items():
+            if value is not None:
+                update_fields.append(f"{field} = %s")
+                update_values.append(value)
+
+        if update_fields:
+            update_values.append(id)
+            query = f"UPDATE devices SET {', '.join(update_fields)} WHERE id = %s"
+            cursor.execute(query, update_values)
+            conn.commit()
+
+        cursor.execute("""
+            SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description, 
+                   last_update, counter1, counter2, counter3, counter4, runtime, restart 
+            FROM devices WHERE id = %s
+        """, (id,))
+        row = cursor.fetchone()
+        if row:
+            return [Device(
+                id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
+                cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
+                counter2=row[9], counter3=row[10], counter4=row[11], runtime=row[12], restart=row[13]
+            )]
+        else:
+            raise HTTPException(status_code=404, detail=f"Device {id} not found after update")
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
         
 @app.delete("/device")
 async def delete_device(id: str = Query(...)):
