@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css" />
     <style>
       body {
         background-color: #f5f5f5;
@@ -153,9 +153,9 @@
       }
 
       .progress {
-          border-radius: 3px;
-          height: 10px;
-          margin-top:7px;
+        border-radius: 3px;
+        height: 10px;
+        margin-top: 7px;
       }
 
       .offline-bg {
@@ -193,23 +193,25 @@
           </thead>
           <tbody> {% for device in devices %} {% set last_update_time = device.last_update|datetime_from_timestamp %} {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %} <tr {% if is_old %}class="table-danger" {% endif %}>
               <td>{{ loop.index }}</td>
-              <td><span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}</td>
+              <td>
+                <span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}
+              </td>
               <td>{{ device.ip or 'N/A' }}</td>
               <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}')" class="btn btn-primary btn-sm d-inline-flex align-items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
                   </svg>
                 </button> {% else %} N/A {% endif %} </td>
-              <td> {% if device.cpu_percent is not none %} <p>{{ device.cpu_percent }}%</p><div class="progress">
-                  <div class="progress-bar progress-bar-striped {{ 'bg-danger' if device.cpu_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100">
-                
-                  </div>
-                </div> {% else %} N/A {% endif %} </td>
-              <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <p>{{ device.ram_used }}MB/{{ device.ram_total }}MB</p><div class="progress">
-                  <div class="progress-bar progress-bar-striped {{ 'bg-danger' if ram_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100">
-                   
-                  </div>
-                </div> {% else %} N/A {% endif %} </td>
+              <td> {% if device.cpu_percent is not none %} <p>{{ "%.1f"|format(device.cpu_percent) }}%</p>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped {{ 'bg-danger' if device.cpu_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div> {% else %} N/A {% endif %}
+              </td>
+              <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <p>{{ device.ram_used }}MB/{{ device.ram_total }}MB</p>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped {{ 'bg-danger' if ram_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div> {% else %} N/A {% endif %}
+              </td>
               <td>{{ device.id or 'N/A' }}</td>
               <td>{{ device.counter2 or 'N/A' }}/{{ device.counter3 or 'N/A' }}/{{ device.counter4 or 'N/A' }}/{{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} </td>
@@ -218,26 +220,21 @@
                 <div class="d-flex gap-2">
                   <form action="/device" method="delete">
                     <input type="hidden" name="id" value="{{ device.id }}">
-                    <button class="btn btn-danger btn-sm d-inline-flex align-items-center" type="submit">
-                      Delete
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                    <button class="btn btn-danger btn-sm d-inline-flex align-items-center" type="submit"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
                       </svg>
                     </button>
                   </form>
                   <form action="/device" method="patch">
                     <input type="hidden" name="id" value="{{ device.id }}">
                     <input type="hidden" name="restart" value="true">
-                    <button class="btn btn-warning btn-sm d-inline-flex align-items-center" type="submit">
-                      Restart
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise ms-1" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z"/>
+                    <button class="btn btn-warning btn-sm d-inline-flex align-items-center" type="submit"> Restart <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise ms-1" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z" />
                       </svg>
                     </button>
                   </form>
                 </div>
               </td>
-
             </tr> {% endfor %} </tbody>
         </table> {% else %} <p>No devices found.</p> {% endif %}
       </div>
@@ -280,8 +277,6 @@ session bpp:i:32
           });
         });
       });
-
-
       document.querySelectorAll('form[method="patch"]').forEach(form => {
         form.addEventListener('submit', function(e) {
           e.preventDefault();
@@ -289,11 +284,11 @@ session bpp:i:32
           fetch(`/device`, {
             method: 'PATCH',
             headers: {
-                'Content-Type': 'application/json'
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id: id,
-                restart: true
+              id: id,
+              restart: true
             })
           }).then(response => response.json()).then(data => {
             alert(data.message);
