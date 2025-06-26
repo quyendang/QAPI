@@ -169,10 +169,14 @@
       <div class="summary">
         <div class="d-inline p-2 text-bg-warning">CPU: {{ cpu_percent }}%</div>
         <div class="d-inline p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
-        <div class="d-inline p-2 text-bg-success">IPs: {{ total_ips }}</div>
-        <form action="/delete-ips" method="post">
-          <button type="submit" class="btn btn-danger">Delete IPs</button>
-        </form>
+        <div class="d-flex align-items-center gap-2">
+          <div class="p-2 text-bg-secondary">IPs: {{ total_ips }}</div>
+          <form action="/delete-ips" method="post" class="m-0">
+            <button type="submit" class="btn btn-danger"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                      </svg></button>
+          </form>
+        </div>
       </div>
       <div class="account-section">
         <h2>Devices List</h2> {% if devices %} <table class="table table-striped">
