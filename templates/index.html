@@ -167,9 +167,9 @@
     <div class="container">
       <h1>Server Dashboard</h1>
       <div class="summary">
-        <p>Total IPs: {{ total_ips }}</p>
-        <p>CPU Usage: {{ cpu_percent }}%</p>
-        <p>Memory Usage: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</p>
+        <div class="d-inline p-2 text-bg-warning">CPU: {{ cpu_percent }}%</div>
+        <div class="d-inline p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
+        <div class="d-inline p-2 text-bg-success">IPs: {{ total_ips }}</div>
         <form action="/delete-ips" method="post">
           <button type="submit" class="btn btn-danger">Delete IPs</button>
         </form>
