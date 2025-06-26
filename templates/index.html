@@ -167,9 +167,9 @@
     <div class="container">
       <h1>Server Dashboard</h1>
       <div class="summary">
-        <div class="d-inline p-2 text-bg-warning">CPU: {{ cpu_percent }}%</div>
-        <div class="d-inline p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
         <div class="d-flex align-items-center gap-2">
+          <div class="p-2 text-bg-warning">CPU: {{ cpu_percent }}%</div>
+          <div class="p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
           <div class="p-2 text-bg-secondary">IPs: {{ total_ips }}</div>
           <form action="/delete-ips" method="post" class="m-0">
             <button type="submit" class="btn btn-danger"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
