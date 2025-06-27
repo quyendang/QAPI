@@ -189,6 +189,7 @@
               <th>CPU Usage (%)</th>
               <th>RAM (Used/Total)</th>
               <th>Client</th>
+              <th>Message</th>
               <th>NoAds/Completed/Click/Time</th>
               <th>Runtime</th>
               <th>Last Update</th>
@@ -217,6 +218,7 @@
                 </div> {% else %} N/A {% endif %}
               </td>
               <td>{{ parts[0]|upper or 'N/A' }}{% if parts|length > 1 %} <span class="badge bg-primary">{{ parts[1]|upper }}</span>{% endif %}</td>
+              <td id="message-{{ device.id }}">Wait</td>
               <td>{{ device.counter2 or 'N/A' }}/{{ device.counter3 or 'N/A' }}/{{ device.counter4 or 'N/A' }}/{{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} </td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
@@ -244,6 +246,31 @@
       </div>
     </div>
     <script>
+        const ws = new WebSocket("ws://" + window.location.host + "/message");
+
+        ws.onopen = function() {
+            console.log("WebSocket connected");
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const deviceId = data.device_id;
+            const message = data.message;
+            const messageCell = document.getElementById(`message-${deviceId}`);
+            if (messageCell) {
+                messageCell.textContent = message || "N/A";
+            }
+        };
+
+        ws.onclose = function() {
+            console.log("WebSocket disconnected");
+        };
+
+        ws.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+
+      
       function createRDPFile(ip) {
         const username = "administrator";
         const rdpContent = `
