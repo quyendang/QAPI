@@ -1,5 +1,5 @@
 import requests
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, WebSocket, Request, Form, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from collections import defaultdict
@@ -12,10 +12,8 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import json
-import pytz
 from netaddr import IPAddress, IPNetwork
 import psutil
-from fastapi import Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -41,6 +39,7 @@ class Device(BaseModel):
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+connected_websockets = set()
 # Định nghĩa các filter tùy chỉnh
 def datetime_from_timestamp(timestamp):
     """Chuyển Unix timestamp sang datetime object múi giờ GMT+7."""
@@ -866,7 +865,31 @@ def get_info():
     finally:
         cursor.close()
         conn.close()
-
+        
+@app.websocket("/message")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    connected_websockets.add(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                message_data = json.loads(data)
+                device_id = message_data.get("device_id")
+                message = message_data.get("message")
+                if not device_id or not message:
+                    await websocket.send_text(json.dumps({"error": "Missing device_id or message"}))
+                    continue
+                for ws in connected_websockets:
+                    await ws.send_text(json.dumps({"device_id": device_id, "message": message}))
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"error": "Invalid JSON format"}))
+    except Exception as e:
+        logging.error(f"WebSocket error: {str(e)}")
+    finally:
+        connected_websockets.remove(websocket)
+        await websocket.close()
+        
 if __name__ == "__main__":
     import uvicorn
     # Chạy ứng dụng trên cổng 10000, cổng mặc định trên Render
