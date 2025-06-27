@@ -878,7 +878,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 device_id = message_data.get("device_id")
                 message = message_data.get("message")
                 if not device_id or not message:
-                    await websocket.send_text(json.dumps({"error": "Missing device_id or message"}))
+                    await websocket.send_text(json.dumps({"error": "Missing deviceid or message"}))
                     continue
                 for ws in connected_websockets:
                     await ws.send_text(json.dumps({"device_id": device_id, "message": message}))
