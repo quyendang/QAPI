@@ -246,29 +246,31 @@
       </div>
     </div>
     <script>
-        const ws = new WebSocket("ws://" + window.location.host + "/message");
+        // Khởi tạo WebSocket với wss://
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const ws = new WebSocket(protocol + window.location.host + "/message");
 
-        ws.onopen = function() {
-            console.log("WebSocket connected");
-        };
+    ws.onopen = function() {
+        console.log("WebSocket connected");
+    };
 
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            const deviceId = data.device_id;
-            const message = data.message;
-            const messageCell = document.getElementById(`message-${deviceId}`);
-            if (messageCell) {
-                messageCell.textContent = message || "N/A";
-            }
-        };
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const deviceId = data.device_id;
+        const message = data.message;
+        const messageCell = document.getElementById(`message-${deviceId}`);
+        if (messageCell) {
+            messageCell.textContent = message || "N/A";
+        }
+    };
 
-        ws.onclose = function() {
-            console.log("WebSocket disconnected");
-        };
+    ws.onclose = function() {
+        console.log("WebSocket disconnected");
+    };
 
-        ws.onerror = function(error) {
-            console.error("WebSocket error:", error);
-        };
+    ws.onerror = function(error) {
+        console.error("WebSocket error:", error);
+    };
 
       
       function createRDPFile(ip) {
