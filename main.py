@@ -655,7 +655,7 @@ async def homepage(request: Request):
         "memory_total": memory_total,
         "memory_used": memory_used,
         "memory_percent": memory_percent,
-        "devices": device_list,
+        "devices": sorted(device_list, key=lambda x: x.id),
         "now": int(datetime.now(pytz.timezone('Asia/Bangkok')).timestamp())
     })
 
