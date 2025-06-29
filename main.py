@@ -890,6 +890,67 @@ async def websocket_endpoint(websocket: WebSocket):
         connected_websockets.remove(websocket)
         await websocket.close()
         
+def is_datacenter(ip: str) -> bool:
+    """Check if IP belongs to a datacenter (basic heuristic)."""
+    # This is a simple check; in production, use a comprehensive datacenter IP database
+    datacenter_ranges = ['172.16.', '10.', '192.168.']
+    return any(ip.startswith(range) for range in datacenter_ranges)
+
+def is_proxy(ip: str, headers: dict) -> bool:
+    """Check if request likely comes through a proxy."""
+    proxy_headers = [
+        'X-Forwarded-For', 'X-Real-IP', 'CF-Connecting-IP',
+        'Forwarded', 'Proxy-Authorization'
+    ]
+    return any(header in headers for header in proxy_headers)
+
+def get_client_ip(request: Request) -> str:
+    """Extract client IP from request."""
+    forwarded = request.headers.get('X-Forwarded-For')
+    if forwarded:
+        # Get the first IP in the chain (client's original IP)
+        ip = forwarded.split(',')[0].strip()
+    else:
+        ip = request.client.host
+    # Validate IP format
+    try:
+        socket.inet_aton(ip)
+        return ip
+    except socket.error:
+        return 'unknown'
+        
+@app.get("/ipinfo")
+async def ip_info(request: Request):
+    try:
+        client_ip = get_client_ip(request)
+        if client_ip == 'unknown':
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Invalid IP address"}
+            )
+
+        # Get geolocation data from ipapi
+        geo_data = ipapi.location(ip=client_ip)
+        
+        # Extract relevant information
+        response = {
+            "ip": client_ip,
+            "countryCode": geo_data.get("country_code", "unknown"),
+            "isDatacenter": is_datacenter(client_ip),
+            "isProxy": is_proxy(client_ip, request.headers),
+            "timezone": geo_data.get("timezone", "unknown"),
+            "offset": geo_data.get("utc_offset", "unknown"),
+            "languages": geo_data.get("languages", "unknown")
+        }
+        
+        return JSONResponse(content=response)
+    
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to retrieve IP info: {str(e)}"}
+        )
+        
 if __name__ == "__main__":
     import uvicorn
     # Chạy ứng dụng trên cổng 10000, cổng mặc định trên Render
