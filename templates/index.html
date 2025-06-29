@@ -90,6 +90,14 @@
       .bg-orange {
         background-color: #ff8c00 !important;
       }
+      .bg-cute {
+          --bs-bg-opacity: 1;
+          background-color: #e84393 !important;
+      }
+      .bg-beauty {
+          --bs-bg-opacity: 1;
+          background-color: #00b894 !important;
+      }
 
       .btn-custom-connect {
         background-color: rgba(29, 188, 96, 0.5);
@@ -189,8 +197,7 @@
               <th>CPU Usage (%)</th>
               <th>RAM (Used/Total)</th>
               <th>Client</th>
-              <th>Message</th>
-              <th>NoAds/Completed/Click/Time</th>
+              <th>NoAds/Time</th>
               <th>Runtime</th>
               <th>Last Update</th>
               <th>Action</th>
@@ -209,17 +216,16 @@
                 </button> {% else %} N/A {% endif %} </td>
               <td> {% if device.cpu_percent is not none %} <p>{{ "%.1f"|format(device.cpu_percent) }}%</p>
                 <div class="progress">
-                  <div class="progress-bar progress-bar-striped {{ 'bg-danger' if device.cpu_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  <div class="progress-bar progress-bar-striped {{ 'bg-cute' if device.cpu_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div> {% else %} N/A {% endif %}
               </td>
               <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <p>{{ device.ram_used }}MB/{{ device.ram_total }}MB</p>
                 <div class="progress">
-                  <div class="progress-bar progress-bar-striped {{ 'bg-danger' if ram_percent > 50 else 'bg-success' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  <div class="progress-bar progress-bar-striped {{ 'bg-cute' if ram_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div> {% else %} N/A {% endif %}
               </td>
               <td>{{ parts[0]|upper or 'N/A' }}{% if parts|length > 1 %} <span class="badge bg-primary">{{ parts[1]|upper }}</span>{% endif %}</td>
-              <td id="message-{{ device.id }}">Wait</td>
-              <td>{{ device.counter2 or 'N/A' }}/{{ device.counter3 or 'N/A' }}/{{ device.counter4 or 'N/A' }}/{{ device.counter5 or 'N/A' }}s</td>
+              <td>{{ device.counter2 or 'N/A' }}-{{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} </td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
               <td>
@@ -246,32 +252,7 @@
       </div>
     </div>
     <script>
-        // Khởi tạo WebSocket với wss://
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const ws = new WebSocket(protocol + window.location.host + "/message");
-
-    ws.onopen = function() {
-        console.log("WebSocket connected");
-    };
-
-    ws.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        const deviceId = data.device_id;
-        const message = data.message;
-        const messageCell = document.getElementById(`message-${deviceId}`);
-        if (messageCell) {
-            messageCell.textContent = message || "N/A";
-        }
-    };
-
-    ws.onclose = function() {
-        console.log("WebSocket disconnected");
-    };
-
-    ws.onerror = function(error) {
-        console.error("WebSocket error:", error);
-    };
-
+        
       
       function createRDPFile(ip) {
         const username = "administrator";
