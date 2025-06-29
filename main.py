@@ -43,24 +43,25 @@ templates = Jinja2Templates(directory="templates")
 connected_websockets = set()
 DATACENTER_NETWORKS = []
 
-async def load_datacenter_ranges():
+def load_datacenter_ranges():
     """Load datacenter CIDR ranges from the remote file at startup."""
     url = "https://raw.githubusercontent.com/jhassine/server-ip-addresses/master/data/datacenters.txt"
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    text = await response.text()
-                    # Split lines and filter out empty lines or comments
-                    cidr_list = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith('#')]
-                    # Convert CIDR ranges to network objects
-                    global DATACENTER_NETWORKS
-                    DATACENTER_NETWORKS = [ipaddress.ip_network(cidr) for cidr in cidr_list]
-                    logging.info(f"Loaded {len(DATACENTER_NETWORKS)} datacenter CIDR ranges")
-                else:
-                    logging.error(f"Failed to load datacenter ranges: HTTP {response.status}")
+        response = requests.get(url)
+        if response.status_code == 200:
+            text = response.text
+            # Split lines and filter out empty lines or comments
+            cidr_list = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith('#')]
+            # Convert CIDR ranges to network objects
+            global DATACENTER_NETWORKS
+            DATACENTER_NETWORKS = [ipaddress.ip_network(cidr) for cidr in cidr_list]
+            logging.info(f"Loaded {len(DATACENTER_NETWORKS)} datacenter CIDR ranges")
+        else:
+            logging.error(f"Failed to load datacenter ranges: HTTP {response.status_code}")
     except Exception as e:
         logging.error(f"Error loading datacenter ranges: {str(e)}")
+
+load_datacenter_ranges()
         
 # Định nghĩa các filter tùy chỉnh
 def datetime_from_timestamp(timestamp):
@@ -912,10 +913,6 @@ async def websocket_endpoint(websocket: WebSocket):
         connected_websockets.remove(websocket)
         await websocket.close()
         
-@app.on_event("startup")
-async def startup_event():
-    """Load datacenter ranges when the application starts."""
-    await load_datacenter_ranges()
 
 def is_datacenter(ip: str) -> bool:
     """Check if IP belongs to a datacenter based on CIDR ranges."""
