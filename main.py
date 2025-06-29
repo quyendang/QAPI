@@ -41,28 +41,7 @@ class Device(BaseModel):
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 connected_websockets = set()
-DATACENTER_NETWORKS = []
 
-def load_datacenter_ranges():
-    """Load datacenter CIDR ranges from the remote file at startup."""
-    url = "https://raw.githubusercontent.com/jhassine/server-ip-addresses/master/data/datacenters.txt"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            text = response.text
-            # Split lines and filter out empty lines or comments
-            cidr_list = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith('#')]
-            # Convert CIDR ranges to network objects
-            global DATACENTER_NETWORKS
-            DATACENTER_NETWORKS = [IPNetwork(cidr) for cidr in cidr_list]
-            logging.info(f"Loaded {len(DATACENTER_NETWORKS)} datacenter CIDR ranges")
-        else:
-            logging.error(f"Failed to load datacenter ranges: HTTP {response.status_code}")
-    except Exception as e:
-        logging.error(f"Error loading datacenter ranges: {str(e)}")
-
-load_datacenter_ranges()
-        
 # Định nghĩa các filter tùy chỉnh
 def datetime_from_timestamp(timestamp):
     """Chuyển Unix timestamp sang datetime object múi giờ GMT+7."""
@@ -914,22 +893,6 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         
 
-def is_datacenter(ip: str) -> bool:
-    """Check if IP belongs to a datacenter based on CIDR ranges."""
-    try:
-        ip_addr = IPAddress(ip)
-        return any(ip_addr in network for network in DATACENTER_NETWORKS)
-    except ValueError:
-        return False
-
-def is_proxy(ip: str, headers: dict) -> bool:
-    """Check if request likely comes through a proxy."""
-    proxy_headers = [
-        'X-Forwarded-For', 'X-Real-IP', 'CF-Connecting-IP',
-        'Forwarded', 'Proxy-Authorization'
-    ]
-    return any(header in headers for header in proxy_headers)
-
 def get_client_ip(request: Request) -> str:
     """Extract client IP from request."""
     forwarded = request.headers.get('X-Forwarded-For')
@@ -973,9 +936,7 @@ async def ip_info(request: Request):
         # Extract relevant information
         response = {
             "ip": client_ip,
-            "countryCode": geo_data.get("country_code", "unknown"),
-            "isDatacenter": is_datacenter(client_ip),
-            "isProxy": is_proxy(client_ip, request.headers),
+            "country_code": geo_data.get("country_code", "unknown"),
             "timezone": geo_data.get("timezone", "unknown"),
             "offset": parse_utc_offset_to_minutes(geo_data.get("utc_offset", "unknown")),
             "languages": geo_data.get("languages", "unknown")
