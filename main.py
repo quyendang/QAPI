@@ -17,7 +17,8 @@ import psutil
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-
+import ipapi
+import socket
 
 class Device(BaseModel):
     id: str  # Bắt buộc, không có giá trị mặc định
