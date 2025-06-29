@@ -740,7 +740,7 @@ def check_ip(ip: str):
         conn.commit()
         return {"allow": True}
     except Exception as e:
-        logging.error(f"Error occurred: {str(e)}")  # Ghi lại lỗi
+        logging.error(f"Error  occurred: {str(e)}")  # Ghi lại lỗi
         return {"error": str(e)}
     finally:
         cursor.close()
