@@ -70,6 +70,15 @@
         font-size: 0.8rem;
         border-radius: 3px;
       }
+      
+      .custom-btn {
+            background-color: #5f27cd;
+            color: #fff;
+      }
+      .custom-btn-delete {
+            background-color: #e84393;
+            color: #fff;
+      }
 
       .btn-delete:hover {
         background-color: #c82333;
@@ -180,7 +189,7 @@
           <div class="p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
           <div class="p-2 text-bg-secondary">IPs: {{ total_ips }}</div>
           <form action="/delete-ips" method="post" class="m-0">
-            <button type="submit" class="btn btn-danger"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
+            <button type="submit" class="btn custom-btn-delete"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
                         <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
                       </svg></button>
           </form>
@@ -209,7 +218,7 @@
                 <span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}
               </td>
               <td>{{ device.ip or 'N/A' }}</td>
-              <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}')" class="btn btn-primary btn-sm d-inline-flex align-items-center">
+              <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}')" class="btn custom-btn btn-sm d-inline-flex align-items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
                   </svg>
@@ -232,7 +241,7 @@
                 <div class="d-flex gap-2">
                   <form action="/device" method="delete">
                     <input type="hidden" name="id" value="{{ device.id }}">
-                    <button class="btn btn-danger btn-sm d-inline-flex align-items-center" type="submit"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
+                    <button class="btn custom-btn-delete btn-sm d-inline-flex align-items-center" type="submit"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
                         <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
                       </svg>
                     </button>
