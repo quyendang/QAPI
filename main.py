@@ -54,7 +54,7 @@ def load_datacenter_ranges():
             cidr_list = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith('#')]
             # Convert CIDR ranges to network objects
             global DATACENTER_NETWORKS
-            DATACENTER_NETWORKS = [ipaddress.ip_network(cidr) for cidr in cidr_list]
+            DATACENTER_NETWORKS = [IPNetwork(cidr) for cidr in cidr_list]
             logging.info(f"Loaded {len(DATACENTER_NETWORKS)} datacenter CIDR ranges")
         else:
             logging.error(f"Failed to load datacenter ranges: HTTP {response.status_code}")
@@ -917,7 +917,7 @@ async def websocket_endpoint(websocket: WebSocket):
 def is_datacenter(ip: str) -> bool:
     """Check if IP belongs to a datacenter based on CIDR ranges."""
     try:
-        ip_addr = ipaddress.ip_address(ip)
+        ip_addr = IPAddress(ip)
         return any(ip_addr in network for network in DATACENTER_NETWORKS)
     except ValueError:
         return False
