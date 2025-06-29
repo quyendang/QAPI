@@ -945,6 +945,18 @@ def get_client_ip(request: Request) -> str:
     except socket.error:
         return 'unknown'
         
+def parse_utc_offset_to_minutes(utc_offset: str) -> int:
+    """Convert UTC offset string (e.g., '+0700' or '-0500') to minutes."""
+    try:
+        if not utc_offset or utc_offset == "unknown":
+            return 0
+        sign = 1 if utc_offset.startswith('+') else -1
+        hours = int(utc_offset[1:3])
+        minutes = int(utc_offset[3:5])
+        return sign * (hours * 60 + minutes)
+    except (ValueError, TypeError):
+        return 0
+
 @app.get("/ipinfo")
 async def ip_info(request: Request):
     try:
@@ -965,14 +977,17 @@ async def ip_info(request: Request):
             "isDatacenter": is_datacenter(client_ip),
             "isProxy": is_proxy(client_ip, request.headers),
             "timezone": geo_data.get("timezone", "unknown"),
-            "offset": geo_data.get("utc_offset", "unknown"),
+            "offset": parse_utc_offset_to_minutes(geo_data.get("utc_offset", "unknown")),
             "languages": geo_data.get("languages", "unknown")
         }
         
-        return response
+        return JSONResponse(content=response)
     
     except Exception as e:
-        return {"error": f"Failed to retrieve IP info: {str(e)}"}
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to retrieve IP info: {str(e)}"}
+        )
         
 if __name__ == "__main__":
     import uvicorn
