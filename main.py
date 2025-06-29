@@ -981,13 +981,10 @@ async def ip_info(request: Request):
             "languages": geo_data.get("languages", "unknown")
         }
         
-        return JSONResponse(content=response)
+        return response
     
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Failed to retrieve IP info: {str(e)}"}
-        )
+        return {"error": f"Failed to retrieve IP info: {str(e)}"}
         
 if __name__ == "__main__":
     import uvicorn
