@@ -233,7 +233,11 @@
                   <div class="progress-bar progress-bar-striped {{ 'bg-cute' if ram_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div> {% else %} N/A {% endif %}
               </td>
-              <td>{{ parts[0]|upper or 'N/A' }}{% if parts|length > 1 %} <span class="badge bg-primary">{{ parts[1]|upper }}</span>{% endif %}</td>
+              <td>
+                <span class="badge" style="background-color: {% if not parts[1] %}#6c757d{% elif parts[1]|lower == 'a' %}#fdcb6e{% elif parts[1]|upper == 'PRO' %}#e84393{% else %}#00cec9{% endif %}">
+        {% if not parts[1] %}Normal{% elif parts[1]|lower == 'a' %}Asia{% elif parts[1]|upper == 'PRO' %}Pro{% else %}Normal{% endif %}
+    </span> {{ parts[0]|upper or 'N/A' }}
+              </td>
               <td>{{ device.counter2 or 'N/A' }}-{{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} </td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
