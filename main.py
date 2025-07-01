@@ -992,8 +992,7 @@ async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
             "utc_offset": gmt_offset_minutes,
             "languages": languages,
             "in_eu": in_eu,
-            "allow": allow,
-            "last_checked": last_checked_str
+            "allow": allow
         }
     except geoip2.errors.AddressNotFoundError:
         # Xử lý trường hợp IP không tìm thấy
