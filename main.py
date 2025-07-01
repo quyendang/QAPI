@@ -19,6 +19,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import ipapi
 import socket
+import geoip2.database
 
 class Device(BaseModel):
     id: str  # Bắt buộc, không có giá trị mặc định
@@ -39,6 +40,7 @@ class Device(BaseModel):
 
 
 app = FastAPI()
+reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 templates = Jinja2Templates(directory="templates")
 connected_websockets = set()
 
@@ -946,7 +948,28 @@ async def ip_info(request: Request):
     
     except Exception as e:
         return {"error": f"Failed to retrieve IP info: {str(e)}"}
+     
+@app.get("/ip-info")
+async def get_ip_info(request: Request):
+    # Lấy IP từ query parameter (nếu có) hoặc từ IP của client
+    ip = request.query_params.get("ip") or request.client.host
+    try:
+        # Tra cứu thông tin IP trong CSDL
+        response = reader.city(ip)
         
+        # Tạo dictionary chứa thông tin theo định dạng yêu cầu
+        data = {
+            "ip": ip,
+            "country_code": response.country.iso_code,
+            "timezone": response.location.time_zone,
+            "offset": 420,  # GeoLite2 không cung cấp offset trực tiếp, cần xử lý thủ công
+            "languages": "vi,en,fr,zh,km"  # GeoLite2 không cung cấp languages, cần thêm thủ công
+        }
+    except geoip2.errors.AddressNotFoundError:
+        # Xử lý trường hợp IP không tìm thấy
+        data = {"error": "IP not found in database"}
+    return data
+    
 if __name__ == "__main__":
     import uvicorn
     # Chạy ứng dụng trên cổng 10000, cổng mặc định trên Render
