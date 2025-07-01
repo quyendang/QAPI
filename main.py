@@ -1,7 +1,7 @@
 import requests
 from fastapi import FastAPI, Query, WebSocket, Request, Form, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from collections import defaultdict
 import random
 from datetime import datetime, timedelta
@@ -43,8 +43,45 @@ app = FastAPI()
 reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 templates = Jinja2Templates(directory="templates")
 connected_websockets = set()
-
+country_data = []
+language_map: Dict[str, str] = {}  # countryCode -> languages
+offset_map: Dict[str, int] = {}    # zoneName -> gmtOffset (seconds)
+country_offset_map: Dict[str, list] = {}  # countryCode -> list of gmtOffsets
 # Định nghĩa các filter tùy chỉnh
+
+def load_country_data():
+    global country_data
+    try:
+        with open('countrydata.json', 'r', encoding='utf-8') as file:
+            country_data = json.load(file)
+        # Build mappings
+        for entry in country_data:
+            country_code = entry['countryCode']
+            zone_name = entry['zoneName']
+            gmt_offset = entry['gmtOffset']
+            languages = entry['languages']
+            
+            # Map countryCode to languages (use first occurrence)
+            if country_code not in language_map:
+                language_map[country_code] = languages
+                
+            # Map zoneName to gmtOffset
+            offset_map[zone_name] = gmt_offset
+            
+            # Store gmtOffsets for each countryCode
+            if country_code not in country_offset_map:
+                country_offset_map[country_code] = []
+            country_offset_map[country_code].append(gmt_offset)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="countrydata.json not found")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid countrydata.json format")
+
+load_country_data()
+    
+
+
+
 def datetime_from_timestamp(timestamp):
     """Chuyển Unix timestamp sang datetime object múi giờ GMT+7."""
     if timestamp is None:
@@ -922,32 +959,49 @@ def parse_utc_offset_to_minutes(utc_offset: str) -> int:
     except (ValueError, TypeError):
         return 0
 
-@app.get("/ipinfo")
-async def ip_info(request: Request):
+@app.get("/ip-info")
+async def get_ip_info(request: Request):
+    # Lấy IP từ query parameter (nếu có) hoặc từ IP của client
+    ip = request.query_params.get("ip") or request.client.host
     try:
-        client_ip = get_client_ip(request)
-        if client_ip == 'unknown':
-            return JSONResponse(
-                status_code=400,
-                content={"error": "Invalid IP address"}
-            )
-
-        # Get geolocation data from ipapi
-        geo_data = ipapi.location(ip=client_ip)
+        # Tra cứu thông tin IP trong CSDL
+        response = reader.city(ip)
         
-        # Extract relevant information
-        response = {
-            "ip": client_ip,
-            "country_code": geo_data.get("country_code", "unknown"),
-            "timezone": geo_data.get("timezone", "unknown"),
-            "offset": parse_utc_offset_to_minutes(geo_data.get("utc_offset", "unknown")),
-            "languages": geo_data.get("languages", "unknown")
+        # Get country code and timezone
+        country_code = response.country.iso_code
+        timezone = response.location.time_zone
+        
+        # Default values if data is missing
+        languages = 'en'
+        gmt_offset_minutes = 0
+        
+        if country_code:
+            # Get languages from countrydata.json
+            languages = language_map.get(country_code.upper(), 'en')  # Default to 'en'
+            
+            # Get gmtOffset from countrydata.json
+            if timezone:
+                gmt_offset_seconds = offset_map.get(timezone)
+                if gmt_offset_seconds is None:
+                    # Fallback: Use first gmtOffset for the countryCode
+                    if country_code.upper() in country_offset_map and country_offset_map[country_code.upper()]:
+                        gmt_offset_seconds = country_offset_map[country_code.upper()][0]
+                    else:
+                        gmt_offset_seconds = 0  # Default to 0 if no data found
+                gmt_offset_minutes = gmt_offset_seconds // 60  # Convert to minutes
+        
+        # Tạo dictionary chứa thông tin theo định dạng yêu cầu
+        data = {
+            "ip": ip,
+            "country_code": country_code,
+            "timezone": timezone,
+            "offset": gmt_offset_minutes,
+            "languages": languages
         }
-        
-        return response
-    
-    except Exception as e:
-        return {"error": f"Failed to retrieve IP info: {str(e)}"}
+    except geoip2.errors.AddressNotFoundError:
+        # Xử lý trường hợp IP không tìm thấy
+        data = {"error": "IP not found in database"}
+    return data
      
 @app.get("/ip-info")
 async def get_ip_info(request: Request):
