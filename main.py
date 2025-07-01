@@ -232,21 +232,6 @@ def create_tables():
 # Gọi hàm tạo bảng khi khởi động ứng dụng
 create_tables()
 
-# Gọi hàm này khi khởi động
-# def fetch_uk_ip_ranges():
-#     global uk_ip_ranges
-#     url = "https://www.ipdeny.com/ipblocks/data/countries/gb.zone"
-#     try:
-#         response = requests.get(url)
-#         response.raise_for_status()
-#         uk_ip_ranges = response.text.strip().splitlines()
-#         print(f"Loaded {len(uk_ip_ranges)} UK IP ranges")
-#     except Exception as e:
-#         print(f"Failed to fetch UK IP ranges: {e}")
-#         uk_ip_ranges = []
-
-# fetch_uk_ip_ranges()
-# Hàm kiểm tra devices và gửi thông báo qua Pushover
 def check_devices():
     try:
         # Gọi API để lấy dữ liệu devices
@@ -907,59 +892,8 @@ def get_info():
         cursor.close()
         conn.close()
         
-@app.websocket("/message")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connected_websockets.add(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            try:
-                message_data = json.loads(data)
-                device_id = message_data.get("device_id")
-                message = message_data.get("message")
-                if not device_id or not message:
-                    await websocket.send_text(json.dumps({"error": "Missing deviceid or message"}))
-                    continue
-                for ws in connected_websockets:
-                    await ws.send_text(json.dumps({"device_id": device_id, "message": message}))
-            except json.JSONDecodeError:
-                await websocket.send_text(json.dumps({"error": "Invalid JSON format"}))
-    except Exception as e:
-        logging.error(f"WebSocket error: {str(e)}")
-    finally:
-        connected_websockets.remove(websocket)
-        await websocket.close()
-        
 
-def get_client_ip(request: Request) -> str:
-    """Extract client IP from request."""
-    forwarded = request.headers.get('X-Forwarded-For')
-    if forwarded:
-        # Get the first IP in the chain (client's original IP)
-        ip = forwarded.split(',')[0].strip()
-    else:
-        ip = request.client.host
-    # Validate IP format
-    try:
-        socket.inet_aton(ip)
-        return ip
-    except socket.error:
-        return 'unknown'
-        
-def parse_utc_offset_to_minutes(utc_offset: str) -> int:
-    """Convert UTC offset string (e.g., '+0700' or '-0500') to minutes."""
-    try:
-        if not utc_offset or utc_offset == "unknown":
-            return 0
-        sign = 1 if utc_offset.startswith('+') else -1
-        hours = int(utc_offset[1:3])
-        minutes = int(utc_offset[3:5])
-        return sign * (hours * 60 + minutes)
-    except (ValueError, TypeError):
-        return 0
-
-@app.get("/ip-info")
+@app.get("/ipinfo")
 async def get_ip_info(request: Request):
     # Lấy IP từ query parameter (nếu có) hoặc từ IP của client
     ip = request.query_params.get("ip") or request.client.host
@@ -972,23 +906,25 @@ async def get_ip_info(request: Request):
         timezone = response.location.time_zone
         
         # Default values if data is missing
-        languages = 'en'
         gmt_offset_minutes = 0
         
-        if country_code:
-            # Get languages from countrydata.json
-            languages = language_map.get(country_code.upper(), 'en')  # Default to 'en'
-            
-            # Get gmtOffset from countrydata.json
-            if timezone:
-                gmt_offset_seconds = offset_map.get(timezone)
-                if gmt_offset_seconds is None:
-                    # Fallback: Use first gmtOffset for the countryCode
-                    if country_code.upper() in country_offset_map and country_offset_map[country_code.upper()]:
-                        gmt_offset_seconds = country_offset_map[country_code.upper()][0]
-                    else:
-                        gmt_offset_seconds = 0  # Default to 0 if no data found
-                gmt_offset_minutes = gmt_offset_seconds // 60  # Convert to minutes
+        # Get languages from countrydata.json
+        languages = language_map.get(country_code.upper() if country_code else None, 'en')
+        
+        # Nếu languages không chứa 'en', thêm 'en' vào đầu danh sách
+        if 'en' not in languages.split(','):
+            languages = f'en,{languages}'
+        
+        # Get gmtOffset from countrydata.json
+        if country_code and timezone:
+            gmt_offset_seconds = offset_map.get(timezone)
+            if gmt_offset_seconds is None:
+                # Fallback: Use first gmtOffset for the countryCode
+                if country_code.upper() in country_offset_map and country_offset_map[country_code.upper()]:
+                    gmt_offset_seconds = country_offset_map[country_code.upper()][0]
+                else:
+                    gmt_offset_seconds = 0  # Default to 0 if no data found
+            gmt_offset_minutes = gmt_offset_seconds // 60  # Convert to minutes
         
         # Tạo dictionary chứa thông tin theo định dạng yêu cầu
         data = {
@@ -1003,26 +939,6 @@ async def get_ip_info(request: Request):
         data = {"error": "IP not found in database"}
     return data
      
-@app.get("/ip-info")
-async def get_ip_info(request: Request):
-    # Lấy IP từ query parameter (nếu có) hoặc từ IP của client
-    ip = request.query_params.get("ip") or request.client.host
-    try:
-        # Tra cứu thông tin IP trong CSDL
-        response = reader.city(ip)
-        
-        # Tạo dictionary chứa thông tin theo định dạng yêu cầu
-        data = {
-            "ip": ip,
-            "country_code": response.country.iso_code,
-            "timezone": response.location.time_zone,
-            "offset": 420,  # GeoLite2 không cung cấp offset trực tiếp, cần xử lý thủ công
-            "languages": "vi,en,fr,zh,km"  # GeoLite2 không cung cấp languages, cần thêm thủ công
-        }
-    except geoip2.errors.AddressNotFoundError:
-        # Xử lý trường hợp IP không tìm thấy
-        data = {"error": "IP not found"}
-    return data
     
 if __name__ == "__main__":
     import uvicorn
