@@ -47,7 +47,11 @@ country_data = []
 language_map: Dict[str, str] = {}  # countryCode -> languages
 offset_map: Dict[str, int] = {}    # zoneName -> gmtOffset (seconds)
 country_offset_map: Dict[str, list] = {}  # countryCode -> list of gmtOffsets
-# Định nghĩa các filter tùy chỉnh
+EUROPEAN_COUNTRY_CODES = {
+    'AL', 'AD', 'AT', 'BY', 'BE', 'BA', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 
+    'GR', 'HU', 'IS', 'IE', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'MD', 'MC', 'ME', 'NL', 'MK', 
+    'NO', 'PL', 'PT', 'RO', 'RU', 'SM', 'RS', 'SK', 'SI', 'ES', 'SE', 'CH', 'UA', 'GB', 'VA'
+}
 
 def load_country_data():
     global country_data
@@ -926,13 +930,17 @@ async def get_ip_info(request: Request):
                     gmt_offset_seconds = 0  # Default to 0 if no data found
             gmt_offset_minutes = gmt_offset_seconds // 60  # Convert to minutes
         
+        # Kiểm tra xem country_code có thuộc châu Âu không
+        in_eu = country_code.upper() in EUROPEAN_COUNTRY_CODES if country_code else False
+        
         # Tạo dictionary chứa thông tin theo định dạng yêu cầu
         data = {
             "ip": ip,
             "country_code": country_code,
             "timezone": timezone,
             "offset": gmt_offset_minutes,
-            "languages": languages
+            "languages": languages,
+            "in_eu": in_eu
         }
     except geoip2.errors.AddressNotFoundError:
         # Xử lý trường hợp IP không tìm thấy
