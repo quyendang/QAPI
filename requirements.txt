@@ -12,3 +12,6 @@ pydantic
 python-multipart
 ipapi
 geoip2
+asyncpg
+slowapi
+cachetools
