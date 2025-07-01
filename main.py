@@ -967,7 +967,7 @@ async def get_ip_info(request: Request):
         }
     except geoip2.errors.AddressNotFoundError:
         # Xử lý trường hợp IP không tìm thấy
-        data = {"error": "IP not found in database"}
+        data = {"error": "IP not found"}
     return data
     
 if __name__ == "__main__":
