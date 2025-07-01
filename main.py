@@ -8,7 +8,6 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from cachetools import TTLCache
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from collections import defaultdict
@@ -66,9 +65,6 @@ uk_ip_ranges = []
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Initialize in-memory cache (TTL: 1 hour)
-ip_cache = TTLCache(maxsize=10000, ttl=3600)
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
@@ -215,7 +211,7 @@ async def create_tables():
             runtime = COALESCE(runtime, 0),
             restart = COALESCE(restart, FALSE)
         ''')
-        # Add index creation
+        # Add index on ip_records(ip)
         await conn.execute('''
         CREATE INDEX IF NOT EXISTS idx_ip_records_ip ON ip_records (ip)
         ''')
@@ -703,11 +699,6 @@ async def get_info():
 @limiter.limit("100/minute")
 async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
     ip = request.query_params.get("ip") or request.client.host
-    cache_key = f"{ip}:{groupId or 'none'}"
-    if cache_key in ip_cache:
-        logging.info(f"Cache hit for IP: {ip}")
-        return ip_cache[cache_key]
-    
     async with app.state.db_pool.acquire() as conn:
         try:
             with geoip_lock:
@@ -765,12 +756,10 @@ async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
                 "in_eu": in_eu,
                 "allow": allow
             }
-            ip_cache[cache_key] = data
             logging.info(f"Processed IP: {ip}, Allow: {allow}")
             return data
         except geoip2.errors.AddressNotFoundError:
             data = {"error": "IP not found"}
-            ip_cache[cache_key] = data
             return data
         except Exception as e:
             logging.error(f"Error processing IP {ip}: {str(e)}")
