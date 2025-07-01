@@ -898,11 +898,9 @@ def get_info():
         
 
 @app.get("/ipinfo")
-async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
+async def get_ip_info(request: Request):
     # Lấy IP từ query parameter (nếu có) hoặc từ IP của client
     ip = request.query_params.get("ip") or request.client.host
-    conn = get_db_connection()
-    cursor = conn.cursor()
     try:
         # Tra cứu thông tin IP trong CSDL
         response = reader.city(ip)
@@ -935,55 +933,6 @@ async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
         # Kiểm tra xem country_code có thuộc châu Âu không
         in_eu = country_code.upper() in EUROPEAN_COUNTRY_CODES if country_code else False
         
-        # Kiểm tra IP trong database với groupId
-        ip_obj = IPAddress(ip)
-        if groupId:
-            cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s AND groupId = %s", (ip, groupId))
-        else:
-            cursor.execute("SELECT last_checked FROM ip_records WHERE ip = %s AND groupId IS NULL", (ip,))
-        row = cursor.fetchone()
-
-        allow = True
-        last_checked_str = None
-        if row:
-            last_checked = row[0]  # Đã là timestamp
-            if datetime.now() - last_checked < timedelta(hours=int(time)):
-                # Nếu IP đã được check trong khoảng thời gian, tăng duplicate_count
-                cursor.execute("UPDATE ip_stats SET duplicate_count = duplicate_count + 1 WHERE id = 1")
-                conn.commit()
-                gmt = pytz.timezone('GMT')
-                gmt_plus_7 = pytz.timezone('Asia/Bangkok')
-                last_checked_gmt = gmt.localize(last_checked).astimezone(gmt_plus_7)
-                # Tính thời gian "time ago"
-                now_gmt_plus_7 = datetime.now(pytz.timezone('Asia/Bangkok'))
-                time_difference = now_gmt_plus_7 - last_checked_gmt
-
-                # Format thời thời gian "time ago"
-                if time_difference.days > 0:
-                    last_checked_str = f"{time_difference.days} days ago"
-
-                elif time_difference.seconds >= 3600:
-                    last_checked_str = f"{time_difference.seconds // 3600} hours ago"
-                elif time_difference.seconds >= 60:
-                    last_checked_str = f"{time_difference.seconds // 60} minutes ago"
-                else:
-                    last_checked_str = f"{time_difference.seconds} seconds ago"
-                
-                allow = False
-
-        # Nếu IP mới hoặc đã quá thời gian kiểm tra, lưu lại
-        if allow:
-            if groupId:
-                cursor.execute("INSERT INTO ip_records (ip, last_checked, groupId) VALUES (%s, %s, %s) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
-                               (ip, datetime.now(), groupId))
-            else:
-                cursor.execute("INSERT INTO ip_records (ip, last_checked, groupId) VALUES (%s, %s, NULL) ON CONFLICT (ip) DO UPDATE SET last_checked = EXCLUDED.last_checked",
-                               (ip, datetime.now()))
-            
-            # Tăng fresh_count
-            cursor.execute("UPDATE ip_stats SET fresh_count = fresh_count + 1 WHERE id = 1")
-            conn.commit()
-
         # Tạo dictionary chứa thông tin theo định dạng yêu cầu
         data = {
             "ip": ip,
@@ -991,18 +940,11 @@ async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
             "timezone": timezone,
             "utc_offset": gmt_offset_minutes,
             "languages": languages,
-            "in_eu": in_eu,
-            "allow": allow
+            "in_eu": in_eu
         }
     except geoip2.errors.AddressNotFoundError:
         # Xử lý trường hợp IP không tìm thấy
         data = {"error": "IP not found"}
-    except Exception as e:
-        logging.error(f"Error occurred: {str(e)}")
-        data = {"error": str(e)}
-    finally:
-        cursor.close()
-        conn.close()
     return data
      
     
