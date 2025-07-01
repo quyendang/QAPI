@@ -215,6 +215,10 @@ async def create_tables():
             runtime = COALESCE(runtime, 0),
             restart = COALESCE(restart, FALSE)
         ''')
+        # Add index creation
+        await conn.execute('''
+        CREATE INDEX IF NOT EXISTS idx_ip_records_ip ON ip_records (ip)
+        ''')
 
 # Check devices (async with aiohttp)
 async def check_devices():
