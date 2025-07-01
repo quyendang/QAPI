@@ -15,3 +15,5 @@ geoip2
 asyncpg
 slowapi
 cachetools
+aiohttp
+celery

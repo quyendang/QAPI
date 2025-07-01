@@ -1,7 +1,7 @@
 import asyncio
 import asyncpg
-import requests
-from fastapi import FastAPI, Query, WebSocket, Request, Form, HTTPException
+import aiohttp
+from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +23,8 @@ import geoip2.database
 import os
 import re
 import threading
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import fcntl
 
 # Pydantic model for Device
 class Device(BaseModel):
@@ -45,7 +47,7 @@ class Device(BaseModel):
 # Initialize FastAPI app and globals
 app = FastAPI()
 reader = geoip2.database.Reader('GeoLite2-City.mmdb')
-geoip_lock = threading.Lock()  # Lock for thread-safe GeoIP access
+geoip_lock = threading.Lock()
 templates = Jinja2Templates(directory="templates")
 connected_websockets = set()
 country_data = []
@@ -109,14 +111,12 @@ load_country_data()
 
 # Utility functions
 def datetime_from_timestamp(timestamp):
-    """Chuyển Unix timestamp sang datetime object múi giờ GMT+7."""
     if timestamp is None:
         return None
     gmt_plus_7 = pytz.timezone('Asia/Bangkok')
     return datetime.fromtimestamp(timestamp, tz=gmt_plus_7)
 
 def time_ago(dt):
-    """Tính toán thời gian 'time ago' từ datetime object."""
     if dt is None:
         return "N/A"
     now = datetime.now(pytz.timezone('Asia/Bangkok'))
@@ -216,11 +216,12 @@ async def create_tables():
             restart = COALESCE(restart, FALSE)
         ''')
 
-# Check devices (synchronous due to external API)
-def check_devices():
+# Check devices (async with aiohttp)
+async def check_devices():
     try:
-        response = requests.get("https://musik-9b557-default-rtdb.asia-southeast1.firebasedatabase.app/devices.json")
-        devices = response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://musik-9b557-default-rtdb.asia-southeast1.firebasedatabase.app/devices.json") as response:
+                devices = await response.json()
         if not devices:
             logging.info("No devices found in the response")
             return
@@ -244,15 +245,16 @@ def check_devices():
                 "title": "Device Warning",
                 "message": message
             }
-            response = requests.post(
-                "https://api.pushover.net/1/messages.json",
-                data=pushover_data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
-            )
-            if response.status_code == 200:
-                logging.info(f"Pushover notification sent successfully: {message}")
-            else:
-                logging.error(f"Failed to send Pushover notification: {response.text}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    "https://api.pushover.net/1/messages.json",
+                    data=pushover_data,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                ) as response:
+                    if response.status == 200:
+                        logging.info(f"Pushover notification sent successfully: {message}")
+                    else:
+                        logging.error(f"Failed to send Pushover notification: {await response.text()}")
     except Exception as e:
         logging.error(f"Error in check_devices: {str(e)}")
 
@@ -286,15 +288,16 @@ async def check_outdated_devices():
                     "title": "Device Warning",
                     "message": message
                 }
-                response = requests.post(
-                    "https://api.pushover.net/1/messages.json",
-                    data=pushover_data,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
-                )
-                if response.status_code == 200:
-                    logging.info(f"Pushover notification sent successfully: {message}")
-                else:
-                    logging.error(f"Failed to send Pushover notification: {response.text}")
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        "https://api.pushover.net/1/messages.json",
+                        data=pushover_data,
+                        headers={"Content-Type": "application/x-www-form-urlencoded"}
+                    ) as response:
+                        if response.status == 200:
+                            logging.info(f"Pushover notification sent successfully: {message}")
+                        else:
+                            logging.error(f"Failed to send Pushover notification: {await response.text()}")
             else:
                 logging.info("No outdated devices found. Outdated device IPs: []")
     except Exception as e:
@@ -308,7 +311,7 @@ async def delete_old_ips():
             result = await conn.execute(
                 "DELETE FROM ip_records WHERE last_checked < $1", time_threshold
             )
-            deleted_rows = int(result.split()[1]) if result.startswith("DELETE") else 0
+            deleted_rows = int(result.split()[1]) if result.startswith('DELETE') else 0
             last_delete_message = f"Deleted {deleted_rows} old IPs at {datetime.now()}"
             await conn.execute(
                 "UPDATE ip_stats SET last_delete = $1 WHERE id = 1", last_delete_message
@@ -317,17 +320,29 @@ async def delete_old_ips():
         except Exception as e:
             logging.error(f"Error occurred while deleting old IPs: {str(e)}")
 
-# Scheduler setup
-scheduler = BackgroundScheduler()
-scheduler.add_job(delete_old_ips, 'interval', hours=12)
-scheduler.add_job(check_devices, 'interval', minutes=15)
-scheduler.start()
+# Scheduler setup with lock to prevent duplicate instances
+def setup_scheduler():
+    lock_file = "/tmp/scheduler.lock"
+    try:
+        fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+        os.close(fd)
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(delete_old_ips, 'interval', hours=12)
+        scheduler.add_job(check_devices, 'interval', minutes=15)
+        scheduler.add_job(check_outdated_devices, 'interval', minutes=15)
+        scheduler.start()
+        logging.info("Scheduler started")
+    except FileExistsError:
+        logging.info("Scheduler already running in another process, skipping initialization")
+    except Exception as e:
+        logging.error(f"Failed to setup scheduler: {str(e)}")
 
 # Startup and shutdown events
 @app.on_event("startup")
 async def startup_event():
     app.state.db_pool = await init_db_pool()
     await create_tables()
+    setup_scheduler()
     logging.info("Database pool initialized and tables created")
 
 @app.on_event("shutdown")
@@ -541,7 +556,7 @@ def get_country(countrys: str, proxy: str):
     return {"proxy": proxy, "country": selected_country}
 
 @app.get("/geteid")
-def get_eid(version: str = "v9.2.0"):
+async def get_eid(version: str = "v9.2.0"):
     try:
         headers = {
             'Sec-Fetch-Site': 'none',
@@ -553,8 +568,9 @@ def get_eid(version: str = "v9.2.0"):
             'Sec-Fetch-Dest': 'document'
         }
         url = f'https://googleads.g.doubleclick.net/mads/static/sdk/native/sdk-core-v40.html?sdk=afma-sdk-i-{version}'
-        response = requests.get(url, headers=headers)
-        html_content = response.text
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                html_content = await response.text()
         sdkLoaderEID_match = re.search(r'var sdkLoaderEID = "([^"]+)"', html_content)
         sdkLoaderEID2_match = re.search(r'f.includes\("([^"]+)"\)', html_content)
         sdkLoaderEID = sdkLoaderEID_match.group(1) if sdkLoaderEID_match else None
