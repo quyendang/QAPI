@@ -938,7 +938,7 @@ async def get_ip_info(request: Request):
             "ip": ip,
             "country_code": country_code,
             "timezone": timezone,
-            "offset": gmt_offset_minutes,
+            "utc_offset": gmt_offset_minutes,
             "languages": languages,
             "in_eu": in_eu
         }
