@@ -1,63 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/Babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css" />
-</head>
-<body>
-    <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        const { useState, useEffect } = React;
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        background-color: #f5f5f5;
+        font-family: 'Arial', sans-serif;
+        color: #333;
+      }
 
-        interface Device {
-            id: string;
-            country_code?: string;
-            ip?: string;
-            cpu_percent?: number;
-            ram_used?: number;
-            ram_total?: number;
-            counter2?: string;
-            counter5?: string;
-            runtime?: number;
-            last_update?: number;
-        }
+      .container {
+        max-width: 1500px;
+        margin: 40px auto;
+        padding: 0 15px;
+      }
 
-        const Dashboard = () => {
-            const [devices, setDevices] = useState<Device[]>([]);
-            const [isLoading, setIsLoading] = useState(true);
-            const [error, setError] = useState<string | null>(null);
-            const [serverStats, setServerStats] = useState({
-                cpu_percent: 0,
-                memory_used: 0,
-                memory_total: 0,
-                memory_percent: 0,
-                total_ips: 0
-            });
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 500;
+        text-align: center;
+        margin-bottom: 10px;
+      }
 
-            useEffect(() => {
-                // Simulate fetching data
-                fetch('/api/devices')
-                    .then(res => res.json())
-                    .then(data => {
-                        setDevices(data.devices);
-                        setServerStats(data.stats);
-                        setIsLoading(false);
-                    })
-                    .catch(err => {
-                        setError(err.message);
-                        setIsLoading(false);
-                    });
-            }, []);
+      .summary {
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 25px;
+        color: #666;
+      }
 
-            const createRDPFile = (ip: string) => {
-                const username = "administrator";
-                const rdpContent = `
+      .summary strong {
+        font-weight: 500;
+      }
+
+      .table {
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      .table th,
+      .table td {
+        padding: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+      }
+
+      .table th {
+        background-color: #fafafa;
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: #777;
+      }
+
+      .old-device {
+        color: #dc3545;
+        /* Màu đỏ cho thiết bị có last_update > 15 phút */
+      }
+
+      .btn-delete {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        border-radius: 3px;
+      }
+      
+      .custom-btn {
+            background-color: #6c5ce7;
+            color: #fff;
+      }
+      .custom-btn-delete {
+            background-color: #e84393;
+            color: #fff;
+      }
+
+      .btn-delete:hover {
+        background-color: #c82333;
+      }
+
+      .status-circle {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+
+      .bg-pink {
+        background-color: #ff69b4 !important;
+      }
+
+      .bg-orange {
+        background-color: #ff8c00 !important;
+      }
+      .bg-cute {
+          --bs-bg-opacity: 1;
+          background-color: #e84393 !important;
+      }
+      .bg-beauty {
+          --bs-bg-opacity: 1;
+          background-color: #00b894 !important;
+      }
+
+      .btn-custom-connect {
+        background-color: rgba(29, 188, 96, 0.5);
+        border: none;
+        padding: 2px 5px;
+      }
+
+      .btn-custom-connect img {
+        width: 16px;
+        height: 16px;
+      }
+
+      .btn-custom-delete {
+        background-color: rgba(248, 40, 48, 0.5);
+        border: none;
+        padding: 2px 5px;
+      }
+
+      .btn-custom-delete img {
+        width: 16px;
+        height: 16px;
+      }
+
+      .account-section {
+        margin-top: 30px;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .account-section h3 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        color: #444;
+      }
+
+      .account-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .account-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+      }
+
+      .account-list li:last-child {
+        border-bottom: none;
+      }
+
+      .account-name {
+        font-weight: 500;
+      }
+
+      .expiry-date {
+        color: #666;
+      }
+
+      .progress {
+        border-radius: 3px;
+        height: 10px;
+        margin-top: 7px;
+      }
+
+      .offline-bg {
+        background-color: #fbc093;
+      }
+
+      .progress-chart {
+        width: 33px;
+        height: 33px;
+        display: inline-block;
+      }
+      .usage-info {
+        text-align: center;
+        font-size: 0.8rem;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Server Dashboard</h1>
+      <div class="summary">
+        <div class="d-flex align-items-center gap-2">
+          <div class="p-2 text-bg-warning">CPU: {{ cpu_percent }}%</div>
+          <div class="p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
+          <div class="p-2 text-bg-secondary">IPs: {{ total_ips }}</div>
+          <form action="/delete-ips" method="post" class="m-0">
+            <button type="submit" class="btn custom-btn-delete"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                      </svg></button>
+          </form>
+        </div>
+      </div>
+      <div class="account-section">
+        <h2>Devices List</h2> {% if devices %} <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Country</th>
+              <th>IP</th>
+              <th>Connect</th>
+              <th>CPU Usage (%)</th>
+              <th>RAM (Used/Total)</th>
+              <th>Client</th>
+              <th>Thread</th>
+              <th>Runtime/Timeout</th>
+              <th>Last Update</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody> {% for device in devices %} {% set last_update_time = device.last_update|datetime_from_timestamp %} {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %} {% set parts = device.id.split('-') %} <tr {% if is_old %}class="table-danger" {% endif %}>
+              <td>{{ loop.index }}</td>
+              <td>
+                <span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}
+              </td>
+              <td>{{ device.ip or 'N/A' }}</td>
+              <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}', '{{device.id}}')" class="btn custom-btn btn-sm d-inline-flex align-items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
+                  </svg>
+                </button> {% else %} N/A {% endif %} </td>
+              <td> {% if device.cpu_percent is not none %} <p>{{ "%.1f"|format(device.cpu_percent) }}%</p>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped {{ 'bg-cute' if device.cpu_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ device.cpu_percent }}%" aria-valuenow="{{ device.cpu_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div> {% else %} N/A {% endif %}
+              </td>
+              <td> {% if device.ram_used is not none and device.ram_total is not none %} {% set ram_percent = (device.ram_used / device.ram_total * 100) if device.ram_total > 0 else 0 %} <p>{{ device.ram_used }}MB/{{ device.ram_total }}MB</p>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped {{ 'bg-cute' if ram_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ ram_percent }}%" aria-valuenow="{{ ram_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div> {% else %} N/A {% endif %}
+              </td>
+              <td>
+                <span class="badge" style="background-color: {% if not parts[1] %}#6c757d{% elif parts[1]|lower == 'a' %}#fdcb6e{% elif parts[1]|upper == 'PRO' %}#e84393{% else %}#00cec9{% endif %}">
+        {% if not parts[1] %}Normal{% elif parts[1]|lower == 'a' %}Asia{% elif parts[1]|upper == 'PRO' %}Pro{% else %}{{parts[1]|capitalize}}{% endif %}
+    </span> {{ parts[0]|upper or 'N/A' }}
+              </td>
+              <td> {% if device.currentThread is not none and device.totalThread is not none %}
+                <div class="progress-chart">
+                  <canvas id="chart{{ loop.index }}"></canvas>
+                </div>
+                <div class="usage-info">
+                  <span id="thread{{ loop.index }}"></span>
+                </div>
+              {% else %} N/A {% endif %}
+              </td>
+              <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} / {{ device.counter5 or 'N/A' }}s</td>
+              <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
+              <td>
+                <div class="d-flex gap-2">
+                  <form action="/device" method="delete">
+                    <input type="hidden" name="id" value="{{ device.id }}">
+                    <button class="btn custom-btn-delete btn-sm d-inline-flex align-items-center" type="submit"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                      </svg>
+                    </button>
+                  </form>
+                  <form action="/device" method="patch">
+                    <input type="hidden" name="id" value="{{ device.id }}">
+                    <input type="hidden" name="restart" value="true">
+                    <button class="btn btn-warning btn-sm d-inline-flex align-items-center" type="submit"> Restart <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise ms-1" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr> {% endfor %} </tbody>
+        </table> {% else %} <p>No devices found.</p> {% endif %}
+      </div>
+    </div>
+    <script>
+      function createRDPFile(ip, pub) {
+        const username = "administrator";
+        const rdpContent = `
 full address:s:${ip}:22
 username:s:${username}
 prompt for credentials:i:1
@@ -66,211 +296,108 @@ screen mode id:i:2
 desktopwidth:i:1920
 desktopheight:i:1080
 session bpp:i:32
-                `.trim();
-                const blob = new Blob([rdpContent], { type: "text/plain" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `remote_${ip}.rdp`;
-                link.click();
-                URL.revokeObjectURL(url);
-            };
+`.trim();
+        const blob = new Blob([rdpContent], {
+          type: "text/plain"
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${pub}_${ip}.rdp`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
 
-            const handleDelete = async (id: string) => {
-                try {
-                    const response = await fetch(`/device?id=${encodeURIComponent(id)}`, {
-                        method: 'DELETE'
-                    });
-                    const data = await response.json();
-                    alert(data.message);
-                    setDevices(devices.filter(device => device.id !== id));
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                }
-            };
+      // JavaScript để xử lý form DELETE (vì HTML không hỗ trợ method DELETE trực tiếp)
+      document.querySelectorAll('form[method="delete"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const id = this.querySelector('input[name="id"]').value;
+          fetch(`/device?id=${encodeURIComponent(id)}`, {
+            method: 'DELETE'
+          }).then(response => response.json()).then(data => {
+            alert(data.message);
+            window.location.reload();
+          }).catch(error => {
+            alert('Error: ' + error.message);
+          });
+        });
+      });
 
-            const handleRestart = async (id: string) => {
-                try {
-                    const response = await fetch('/device', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id, restart: true })
-                    });
-                    const data = await response.json();
-                    alert(data.message);
-                    window.location.reload();
-                } catch (error) {
-                    alert('Error: ' + error.message);
-                }
-            };
+      document.querySelectorAll('form[method="patch"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const id = this.querySelector('input[name="id"]').value;
+          fetch(`/device`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id: id,
+              restart: true
+            })
+          }).then(response => response.json()).then(data => {
+            alert(data.message);
+            window.location.reload();
+          }).catch(error => {
+            alert('Error: ' + error.message);
+          });
+        });
+      });
 
-            const formatTimeAgo = (timestamp?: number) => {
-                if (!timestamp) return 'N/A';
-                const now = Date.now() / 1000;
-                const diff = now - timestamp;
-                if (diff < 60) return `${Math.round(diff)}s ago`;
-                if (diff < 3600) return `${Math.round(diff / 60)}m ago`;
-                return `${Math.round(diff / 3600)}h ago`;
-            };
+      // Tạo biểu đồ cho cột Thread
+      function createThreadChart(chartId, currentThread, totalThread, threadId) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        let chartStatus = Chart.getChart(chartId);
+        if (chartStatus) {
+          chartStatus.destroy();
+        }
 
-            const formatRuntime = (runtime?: number) => {
-                if (!runtime) return 'N/A';
-                const hours = Math.floor(runtime / 3600);
-                const minutes = Math.floor((runtime % 3600) / 60);
-                return `${hours}h ${minutes}m`;
-            };
+        const progress = (currentThread / totalThread) * 100 || 0; // Tránh chia cho 0
+        const data = progress === 100 ? [100] : [progress, 100 - progress];
+        const backgroundColors = progress === 100 ? ['#00b894'] : ['#00b894', '#55efc4'];
 
-            if (isLoading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-            if (error) return <div className="text-red-500 text-center">{error}</div>;
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            datasets: [{
+              data: data,
+              backgroundColor: backgroundColors,
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: 0, // Bắt đầu từ đỉnh (12h), theo chiều kim đồng hồ
+            circumference: 360,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                enabled: false
+              }
+            }
+          }
+        });
 
-            return (
-                <div className="container mx-auto p-4 max-w-7xl">
-                    <h1 className="text-3xl font-bold text-center mb-6">Dashboard</h1>
-                    
-                    <div className="flex flex-wrap gap-4 mb-8 justify-center">
-                        <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg">CPU: {serverStats.cpu_percent}%</div>
-                        <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg">
-                            Memory: {serverStats.memory_used} GB / {serverStats.memory_total} GB ({serverStats.memory_percent}%)
-                        </div>
-                        <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">IPs: {serverStats.total_ips}</div>
-                        <button 
-                            onClick={() => fetch('/delete-ips', { method: 'POST' }).then(() => window.location.reload())}
-                            className="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition-colors flex items-center gap-2"
-                        >
-                            Delete
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="bi bi-x-lg" viewBox="0 0 16 16">
-                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
-                            </svg>
-                        </button>
-                    </div>
+        document.getElementById(threadId).textContent = `${currentThread || 0}/${totalThread || 0}`;
+      }
 
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <h2 className="text-xl font-semibold mb-4">Devices List</h2>
-                        {devices.length === 0 ? (
-                            <p className="text-gray-500 text-center">No devices found.</p>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-50 text-gray-600 uppercase text-xs">
-                                            <th className="p-3">No.</th>
-                                            <th className="p-3">Country</th>
-                                            <th className="p-3">IP</th>
-                                            <th className="p-3">Connect</th>
-                                            <th className="p-3">CPU Usage</th>
-                                            <th className="p-3">RAM</th>
-                                            <th className="p-3">Client</th>
-                                            <th className="p-3">NoAds/Time</th>
-                                            <th className="p-3">Runtime</th>
-                                            <th className="p-3">Last Update</th>
-                                            <th className="p-3">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {devices.map((device, index) => {
-                                            const lastUpdate = device.last_update ? new Date(device.last_update * 1000) : null;
-                                            const isOld = lastUpdate && ((Date.now() / 1000) - device.last_update) > 900;
-                                            const parts = device.id.split('-');
-                                            const ramPercent = device.ram_total && device.ram_used ? (device.ram_used / device.ram_total * 100) : 0;
-
-                                            return (
-                                                <tr key={device.id} className={isOld ? 'bg-red-50' : 'hover:bg-gray-50'}>
-                                                    <td className="p-3">{index + 1}</td>
-                                                    <td className="p-3">
-                                                        <span className={`fi fi-${device.country_code?.toLowerCase()} mr-2`}></span>
-                                                        {device.country_code || 'N/A'}
-                                                    </td>
-                                                    <td className="p-3">{device.ip || 'N/A'}</td>
-                                                    <td className="p-3">
-                                                        {device.ip ? (
-                                                            <button 
-                                                                onClick={() => createRDPFile(device.ip!)}
-                                                                className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-right-short" viewBox="0 0 16 16">
-                                                                    <path fillRule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-                                                                </svg>
-                                                            </button>
-                                                        ) : 'N/A'}
-                                                    </td>
-                                                    <td className="p-3">
-                                                        {device.cpu_percent != null ? (
-                                                            <>
-                                                                <p>{device.cpu_percent.toFixed(1)}%</p>
-                                                                <div className="w-24 bg-gray-200 rounded-full h-2.5">
-                                                                    <div 
-                                                                        className={`h-2.5 rounded-full ${device.cpu_percent > 50 ? 'bg-pink-500' : 'bg-green-500'}`} 
-                                                                        style={{ width: `${device.cpu_percent}%` }}
-                                                                    ></div>
-                                                                </div>
-                                                            </>
-                                                        ) : 'N/A'}
-                                                    </td>
-                                                    <td className="p-3">
-                                                        {device.ram_used != null && device.ram_total != null ? (
-                                                            <>
-                                                                <p>{device.ram_used}MB/{device.ram_total}MB</p>
-                                                                <div className="w-24 bg-gray-200 rounded-full h-2.5">
-                                                                    <div 
-                                                                        className={`h-2.5 rounded-full ${ramPercent > 50 ? 'bg-pink-500' : 'bg-green-500'}`} 
-                                                                        style={{ width: `${ramPercent}%` }}
-                                                                    ></div>
-                                                                </div>
-                                                            </>
-                                                        ) : 'N/A'}
-                                                    </td>
-                                                    <td className="p-3">
-                                                        <span className={`inline-block px-2 py-1 rounded text-white ${
-                                                            !parts[1] ? 'bg-gray-500' : 
-                                                            parts[1].toLowerCase() === 'a' ? 'bg-yellow-500' :
-                                                            parts[1].toUpperCase() === 'PRO' ? 'bg-pink-500' : 'bg-teal-500'
-                                                        }`}>
-                                                            {!parts[1] ? 'Normal' : 
-                                                             parts[1].toLowerCase() === 'a' ? 'Asia' :
-                                                             parts[1].toUpperCase() === 'PRO' ? 'Pro' : parts[1].charAt(0).toUpperCase() + parts[1].slice(1)}
-                                                        </span>
-                                                        <span className="ml-2">{parts[0].toUpperCase() || 'N/A'}</span>
-                                                    </td>
-                                                    <td className="p-3">{device.counter2 || 'N/A'}-{device.counter5 || 'N/A'}s</td>
-                                                    <td className="p-3">{formatRuntime(device.runtime)}</td>
-                                                    <td className="p-3">{formatTimeAgo(device.last_update)}</td>
-                                                    <td className="p-3">
-                                                        <div className="flex gap-2">
-                                                            <button 
-                                                                onClick={() => handleDelete(device.id)}
-                                                                className="bg-pink-500 text-white px-2 py-1 rounded hover:bg-pink-600 transition-colors flex items-center gap-1"
-                                                            >
-                                                                Delete
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="bi bi-x-lg" viewBox="0 0 16 16">
-                                                                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
-                                                                </svg>
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => handleRestart(device.id)}
-                                                                className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-colors flex items-center gap-1"
-                                                            >
-                                                                Restart
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="bi bi-arrow-clockwise" viewBox="0 0 16 16">
-                                                                    <path fillRule="evenodd" d="M8 3a5 5 0 1 1-4.546 2
-
-.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z" />
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        ReactDOM.render(<Dashboard />, document.getElementById('root'));
+      // Khởi tạo biểu đồ cho mỗi device
+      document.addEventListener('DOMContentLoaded', () => {
+        {% if devices %}
+          {% for device in devices %}
+            {% if device.currentThread is not none and device.totalThread is not none %}
+              createThreadChart('chart{{ loop.index }}', {{ device.currentThread|default(0) }}, {{ device.totalThread|default(0) }}, 'thread{{ loop.index }}');
+            {% else %}
+              document.getElementById('thread{{ loop.index }}').textContent = 'N/A';
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      });
     </script>
-</body>
+  </body>
 </html>
