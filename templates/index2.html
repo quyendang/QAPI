@@ -470,27 +470,30 @@ session bpp:i:32
         document.getElementById(threadId).textContent = `${progress || 0}%`;
       }
 
-      // Khởi tạo biểu đồ cho mỗi device
-      document.addEventListener('DOMContentLoaded', () => {
-        {% if devices %}
-          {% for device in devices %}
-            {% if device.currentThread is not none and device.totalThread is not none %}
-              createThreadChart('chart{{ loop.index }}', {{ device.currentThread|default(0) }}, {{ device.totalThread|default(0) }}, 'thread{{ loop.index }}');
-            {% else %}
-              document.getElementById('thread{{ loop.index }}').textContent = 'N/A';
+     document.addEventListener('DOMContentLoaded', () => {
+  {% if devices %}
+    {% for device in devices %}
+      {% if device.currentThread is not none and device.totalThread is not none %}
+        createThreadChart('chart{{ loop.index }}', {{ device.currentThread|default(0) }}, {{ device.totalThread|default(0) }}, 'thread{{ loop.index }}');
+      {% else %}
+        document.getElementById('thread{{ loop.index }}').textContent = 'N/A';
+      {% endif %}
+
       {% if device.ram_used is not none and device.ram_total is not none %}
-              createRamChart('chartram{{ loop.index }}', {{ device.ram_used|default(0) }}, {{ device.ram_total|default(0) }}, 'threadram{{ loop.index }}');
-            {% else %}
-              document.getElementById('threadram{{ loop.index }}').textContent = 'N/A';
+        createRamChart('chartram{{ loop.index }}', {{ device.ram_used|default(0) }}, {{ device.ram_total|default(0) }}, 'threadram{{ loop.index }}');
+      {% else %}
+        document.getElementById('threadram{{ loop.index }}').textContent = 'N/A';
+      {% endif %}
+
       {% if device.cpu_percent is not none %}
-              createCPUChart('chartcpu{{ loop.index }}', {{ device.cpu_percent|default(0) }}, 'threadcpu{{ loop.index }}');
-            {% else %}
-              document.getElementById('threadcpu{{ loop.index }}').textContent = 'N/A';
-      
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      });
+        createCPUChart('chartcpu{{ loop.index }}', {{ device.cpu_percent|default(0) }}, 'threadcpu{{ loop.index }}');
+      {% else %}
+        document.getElementById('threadcpu{{ loop.index }}').textContent = 'N/A';
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+});
+
     </script>
   </body>
 </html>
