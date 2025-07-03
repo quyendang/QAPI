@@ -42,6 +42,8 @@ class Device(BaseModel):
     counter5: int | None = 0
     runtime: int | None = 0
     restart: bool = False
+    totalThread: int | None = 0
+    currentThread: int | None = 0
 
 # Initialize FastAPI app and globals
 app = FastAPI()
@@ -160,7 +162,9 @@ async def create_tables():
             counter4 INTEGER DEFAULT 0,
             counter5 INTEGER DEFAULT 0,
             runtime INTEGER DEFAULT 0,
-            restart BOOLEAN DEFAULT FALSE
+            restart BOOLEAN DEFAULT FALSE,
+            totalThread INTEGER DEFAULT 0,
+            currentThread INTEGER DEFAULT 0
         )
         ''')
         await conn.execute('''
@@ -199,6 +203,14 @@ async def create_tables():
         ADD COLUMN IF NOT EXISTS counter5 INTEGER DEFAULT 0
         ''')
         await conn.execute('''
+        ALTER TABLE devices 
+        ADD COLUMN IF NOT EXISTS totalThread INTEGER DEFAULT 0
+        ''')
+        await conn.execute('''
+        ALTER TABLE devices 
+        ADD COLUMN IF NOT EXISTS currentThread INTEGER DEFAULT 0
+        ''')
+        await conn.execute('''
         UPDATE devices 
         SET ram_total = COALESCE(ram_total, 0),
             ram_used = COALESCE(ram_used, 0),
@@ -209,7 +221,9 @@ async def create_tables():
             counter4 = COALESCE(counter4, 0),
             counter5 = COALESCE(counter5, 0),
             runtime = COALESCE(runtime, 0),
-            restart = COALESCE(restart, FALSE)
+            restart = COALESCE(restart, FALSE),
+            totalThread = COALESCE(totalThread, 0),
+            currentThread = COALESCE(currentThread, 0)
         ''')
         # Add index on ip_records(ip)
         await conn.execute('''
@@ -359,7 +373,8 @@ async def get_devices(id: Optional[str] = Query(None)):
                 row = await conn.fetchrow(
                     """
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
-                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart
+                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
+                           totalThread, currentThread
                     FROM devices WHERE id = $1
                     """, id
                 )
@@ -369,13 +384,14 @@ async def get_devices(id: Optional[str] = Query(None)):
                     id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                     cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                     counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                    runtime=row[13], restart=row[14]
+                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
                 )]
             else:
                 rows = await conn.fetch(
                     """
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
-                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart
+                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
+                           totalThread, currentThread
                     FROM devices
                     """
                 )
@@ -384,7 +400,7 @@ async def get_devices(id: Optional[str] = Query(None)):
                         id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                         cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                         counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                        runtime=row[13], restart=row[14]
+                        runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
                     ) for row in rows
                 ]
         except Exception as e:
@@ -413,7 +429,8 @@ async def add_or_update_device(device: Device):
                 row = await conn.fetchrow(
                     """
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
-                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart
+                           last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
+                           totalThread, currentThread
                     FROM devices WHERE id = $1
                     """, device.id
                 )
@@ -422,7 +439,7 @@ async def add_or_update_device(device: Device):
                         id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                         cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                         counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                        runtime=row[13], restart=row[14]
+                        runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
                     )]
                 else:
                     raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
@@ -440,7 +457,7 @@ async def add_or_update_device(device: Device):
                     id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                     cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                     counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                    runtime=row[13], restart=row[14]
+                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
                 )]
         except Exception as e:
             logging.error(f"Error occurred: {str(e)}")
@@ -469,7 +486,8 @@ async def patch_device(device: Device):
             row = await conn.fetchrow(
                 """
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
-                       last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart
+                       last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
+                       totalThread, currentThread
                 FROM devices WHERE id = $1
                 """, device.id
             )
@@ -478,7 +496,7 @@ async def patch_device(device: Device):
                     id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                     cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                     counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                    runtime=row[13], restart=row[14]
+                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
                 )]
             else:
                 raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
@@ -507,7 +525,8 @@ async def homepage(request: Request):
             rows = await conn.fetch(
                 """
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
-                       last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart
+                       last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
+                       totalThread, currentThread
                 FROM devices
                 """
             )
@@ -517,7 +536,7 @@ async def homepage(request: Request):
                     "ram_used": row[4], "cpu_percent": row[5], "description": row[6],
                     "last_update": row[7], "counter1": row[8], "counter2": row[9],
                     "counter3": row[10], "counter4": row[11], "counter5": row[12],
-                    "runtime": row[13], "restart": row[14]
+                    "runtime": row[13], "restart": row[14], "totalThread": row[15], "currentThread": row[16]
                 } for row in rows
             ]
         except Exception as e:

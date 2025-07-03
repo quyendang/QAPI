@@ -206,8 +206,8 @@
               <th>CPU Usage (%)</th>
               <th>RAM (Used/Total)</th>
               <th>Client</th>
-              <th>NoAds/Time</th>
-              <th>Runtime</th>
+              <th>Thread</th>
+              <th>Runtime/Timeout</th>
               <th>Last Update</th>
               <th>Action</th>
             </tr>
@@ -238,8 +238,12 @@
         {% if not parts[1] %}Normal{% elif parts[1]|lower == 'a' %}Asia{% elif parts[1]|upper == 'PRO' %}Pro{% else %}{{parts[1]|capitalize}}{% endif %}
     </span> {{ parts[0]|upper or 'N/A' }}
               </td>
-              <td>{{ device.counter2 or 'N/A' }}-{{ device.counter5 or 'N/A' }}s</td>
-              <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} </td>
+              <td> {% if device.currentThread is not none and device.totalThread is not none %} {% set thread_percent = (device.currentThread / device.totalThread * 100) if device.totalThread > 0 else 0 %} <p>{{ device.currentThread }}/{{ device.totalThread }}</p>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped {{ 'bg-cute' if thread_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ thread_percent }}%" aria-valuenow="{{ thread_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div> {% else %} N/A {% endif %}
+              </td>
+              <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} / {{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
               <td>
                 <div class="d-flex gap-2">
