@@ -402,7 +402,7 @@ session bpp:i:32
 
         const progress = (currentRam / totalRam) * 100 || 0; // Tránh chia cho 0
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#1B9CFC'] : ['#1B9CFC', '#e9ecef'];
+        const backgroundColors = progress === 100 ? ['#2C3A47'] : ['#2C3A47', '#e9ecef'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -429,7 +429,10 @@ session bpp:i:32
           }
         });
 
-        document.getElementById(threadId).textContent = `${currentRam || 0}/${totalRam || 0}`;
+        const ramUsedGB = (currentRam || 0) / 1024;
+        const ramTotalGB = (totalRam || 0) / 1024;
+        
+        document.getElementById(threadId).textContent = `${ramUsedGB.toFixed(1)}GB / ${ramTotalGB.toFixed(1)}GB`;
       }
 
       function createCPUChart(chartId, progress, threadId) {
@@ -440,7 +443,7 @@ session bpp:i:32
         }
         
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#1B9CFC'] : ['#1B9CFC', '#e9ecef'];
+        const backgroundColors = progress === 100 ? ['#2C3A47'] : ['#2C3A47', '#e9ecef'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -467,7 +470,7 @@ session bpp:i:32
           }
         });
 
-        document.getElementById(threadId).textContent = `${progress || 0}%`;
+        document.getElementById(threadId).textContent = `${(progress || 0).toFixed(1)}%`;
       }
 
      document.addEventListener('DOMContentLoaded', () => {
