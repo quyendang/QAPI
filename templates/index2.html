@@ -181,8 +181,8 @@
       }
 
       .progress-chart {
-        width: 33px;
-        height: 33px;
+        width: 30px;
+        height: 30px;
         display: inline-block;
       }
       .usage-info {
@@ -355,7 +355,7 @@ session bpp:i:32
 
         const progress = (currentThread / totalThread) * 100 || 0; // Tránh chia cho 0
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#e84393'] : ['#e84393', '#e9ecef'];
+        const backgroundColors = progress === 100 ? ['#00b894'] : progress > 80 ? ['#00b894', '#e9ecef'] : progress > 50 ? ['#fdcb6e', '#e9ecef'] :  ['#e84393', '#e9ecef'];
 
         new Chart(ctx, {
           type: 'pie',
