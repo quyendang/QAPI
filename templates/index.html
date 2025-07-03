@@ -285,7 +285,7 @@ session bpp:i:32
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${ip}_${pub}.rdp`;
+        link.download = `${pub}_${ip}.rdp`;
         link.click();
         URL.revokeObjectURL(url);
       }
