@@ -218,7 +218,7 @@
                 <span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}
               </td>
               <td>{{ device.ip or 'N/A' }}</td>
-              <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}')" class="btn custom-btn btn-sm d-inline-flex align-items-center">
+              <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}', '{{device.id}}')" class="btn custom-btn btn-sm d-inline-flex align-items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
                   </svg>
@@ -267,7 +267,7 @@
     <script>
         
       
-      function createRDPFile(ip) {
+      function createRDPFile(ip, pub) {
         const username = "administrator";
         const rdpContent = `
 full address:s:${ip}:22
@@ -285,7 +285,7 @@ session bpp:i:32
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `remote_${ip}.rdp`;
+        link.download = `${ip}_${pub}.rdp`;
         link.click();
         URL.revokeObjectURL(url);
       }
