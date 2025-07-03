@@ -240,7 +240,7 @@
               </td>
               <td> {% if device.currentThread is not none and device.totalThread is not none %} {% set thread_percent = (device.currentThread / device.totalThread * 100) if device.totalThread > 0 else 0 %} <p>{{ device.currentThread }}/{{ device.totalThread }}</p>
                 <div class="progress">
-                  <div class="progress-bar progress-bar-striped {{ 'bg-cute' if thread_percent > 50 else 'bg-beauty' }}" role="progressbar" style="width: {{ thread_percent }}%" aria-valuenow="{{ thread_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                  <div class="progress-bar progress-bar-striped {{ 'bg-beauty' if thread_percent > 50 else 'bg-cute' }}" role="progressbar" style="width: {{ thread_percent }}%" aria-valuenow="{{ thread_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div> {% else %} N/A {% endif %}
               </td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} / {{ device.counter5 or 'N/A' }}s</td>
