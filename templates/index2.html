@@ -9,9 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
-        background-color: #f5f5f5;
+        background-color: #f7f9fc;
         font-family: 'Arial', sans-serif;
-        color: #333;
+        color: #2d3748;
       }
 
       .container {
@@ -22,20 +22,21 @@
 
       h2 {
         font-size: 1.5rem;
-        font-weight: 500;
+        font-weight: 600;
         text-align: center;
         margin-bottom: 10px;
+        color: #2d3748;
       }
 
       .summary {
         font-size: 0.9rem;
         text-align: center;
         margin-bottom: 25px;
-        color: #666;
+        color: #718096;
       }
 
       .summary strong {
-        font-weight: 500;
+        font-weight: 600;
       }
 
       .table {
@@ -46,43 +47,63 @@
       .table th,
       .table td {
         padding: 10px;
-        border-bottom: 1px solid #e0e0e0;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
       }
 
       .table th {
-        background-color: #fafafa;
-        font-weight: 500;
+        background-color: #edf2f7;
+        font-weight: 600;
         text-transform: uppercase;
         font-size: 0.75rem;
-        color: #777;
+        color: #4a5568;
       }
 
       .old-device {
-        color: #dc3545;
-        /* Màu đỏ cho thiết bị có last_update > 15 phút */
+        color: #e53e3e;
       }
 
       .btn-delete {
-        background-color: #dc3545;
+        background-color: #e53e3e;
         color: white;
         border: none;
         padding: 5px 10px;
         font-size: 0.8rem;
-        border-radius: 3px;
-      }
-      
-      .custom-btn {
-            background-color: #1B9CFC;
-            color: #fff;
-      }
-      .custom-btn-delete {
-            background-color: #e84393;
-            color: #fff;
+        border-radius: 4px;
       }
 
       .btn-delete:hover {
-        background-color: #c82333;
+        background-color: #c53030;
+      }
+
+      .custom-btn {
+        background-color: #3182ce;
+        color: #fff;
+        border-radius: 4px;
+      }
+
+      .custom-btn:hover {
+        background-color: #2b6cb0;
+      }
+
+      .custom-btn-delete {
+        background-color: #e53e3e;
+        color: #fff;
+        border-radius: 4px;
+      }
+
+      .custom-btn-delete:hover {
+        background-color: #c53030;
+      }
+
+      .custom-btn-restart {
+        background-color: #f6e05e;
+        color: #2d3748;
+        border-radius: 4px;
+      }
+
+      .custom-btn-restart:hover {
+        background-color: #ecc94b;
       }
 
       .status-circle {
@@ -93,26 +114,11 @@
         margin-right: 5px;
       }
 
-      .bg-pink {
-        background-color: #ff69b4 !important;
-      }
-
-      .bg-orange {
-        background-color: #ff8c00 !important;
-      }
-      .bg-cute {
-          --bs-bg-opacity: 1;
-          background-color: #e84393 !important;
-      }
-      .bg-beauty {
-          --bs-bg-opacity: 1;
-          background-color: #00b894 !important;
-      }
-
       .btn-custom-connect {
-        background-color: rgba(29, 188, 96, 0.5);
+        background-color: #38a169;
         border: none;
         padding: 2px 5px;
+        border-radius: 4px;
       }
 
       .btn-custom-connect img {
@@ -121,9 +127,10 @@
       }
 
       .btn-custom-delete {
-        background-color: rgba(248, 40, 48, 0.5);
+        background-color: #e53e3e;
         border: none;
         padding: 2px 5px;
+        border-radius: 4px;
       }
 
       .btn-custom-delete img {
@@ -135,49 +142,24 @@
         margin-top: 30px;
         background-color: #fff;
         padding: 20px;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
       }
 
       .account-section h3 {
         font-size: 1.2rem;
         margin-bottom: 15px;
-        color: #444;
-      }
-
-      .account-list {
-        list-style: none;
-        padding: 0;
-      }
-
-      .account-list li {
-        padding: 8px 0;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.9rem;
-      }
-
-      .account-list li:last-child {
-        border-bottom: none;
-      }
-
-      .account-name {
-        font-weight: 500;
-      }
-
-      .expiry-date {
-        color: #666;
+        color: #2d3748;
       }
 
       .progress {
-        border-radius: 3px;
+        border-radius: 4px;
         height: 10px;
         margin-top: 7px;
       }
 
       .offline-bg {
-        background-color: #fbc093;
+        background-color: #fed7d7;
       }
 
       .progress-chart {
@@ -185,9 +167,16 @@
         height: 30px;
         display: inline-block;
       }
+
       .usage-info {
         font-size: 0.8rem;
-        color: #333;
+        color: #4a5568;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 4px;
       }
     </style>
   </head>
@@ -199,7 +188,7 @@
           <div class="p-2 text-bg-warning">CPU: {{ cpu_percent }}%</div>
           <div class="p-2 text-bg-primary">Memory: {{ memory_used }} GB / {{ memory_total }} GB ({{ memory_percent }}%)</div>
           <div class="p-2 text-bg-secondary">IPs: {{ total_ips }}</div>
-          <form action="/delete-ips" method="post" class="m-0">
+          <form action="/delete-ips" method="post" class="m-0" onsubmit="return confirm('Are you sure you want to delete all IPs?');">
             <button type="submit" class="btn custom-btn-delete"> Delete <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-x-lg ms-1" viewBox="0 0 16 16">
                         <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
                       </svg></button>
@@ -253,7 +242,7 @@
               {% else %} N/A {% endif %}
               </td>
               <td>
-                {{ parts[0]|upper or 'N/A' }} <span class="badge" style="background-color: {% if not parts[1] %}#6c757d{% elif parts[1]|lower == 'a' %}#fdcb6e{% elif parts[1]|upper == 'PRO' %}#e84393{% else %}#00cec9{% endif %}">
+                {{ parts[0]|upper or 'N/A' }} <span class="badge" style="background-color: {% if not parts[1] %}#718096{% elif parts[1]|lower == 'a' %}#d69e2e{% elif parts[1]|upper == 'PRO' %}#3182ce{% else %}#38a169{% endif %}">
         {% if not parts[1] %}N{% elif parts[1]|lower == 'a' %}A{% elif parts[1]|upper == 'PRO' %}P{% else %}{{parts[1]|upper}}{% endif %}
     </span>
               </td>
@@ -280,7 +269,7 @@
                   <form action="/device" method="patch">
                     <input type="hidden" name="id" value="{{ device.id }}">
                     <input type="hidden" name="restart" value="true">
-                    <button class="btn btn-warning btn-sm d-inline-flex align-items-center" type="submit"> Restart <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise ms-1" viewBox="0 0 16 16">
+                    <button class="btn custom-btn-restart btn-sm d-inline-flex align-items-center" type="submit"> Restart <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-arrow-clockwise ms-1" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 1 .908-.417A4 4 0 1 0 8 4v1.5a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5H11a.5.5 0 0 1 0 1H8.707A5.001 5.001 0 0 1 8 3z" />
                       </svg>
                     </button>
@@ -315,19 +304,20 @@ session bpp:i:32
         URL.revokeObjectURL(url);
       }
 
-      // JavaScript để xử lý form DELETE (vì HTML không hỗ trợ method DELETE trực tiếp)
       document.querySelectorAll('form[method="delete"]').forEach(form => {
         form.addEventListener('submit', function(e) {
           e.preventDefault();
           const id = this.querySelector('input[name="id"]').value;
-          fetch(`/device?id=${encodeURIComponent(id)}`, {
-            method: 'DELETE'
-          }).then(response => response.json()).then(data => {
-            alert(data.message);
-            window.location.reload();
-          }).catch(error => {
-            alert('Error: ' + error.message);
-          });
+          if (confirm('Are you sure you want to delete this device?')) {
+            fetch(`/device?id=${encodeURIComponent(id)}`, {
+              method: 'DELETE'
+            }).then(response => response.json()).then(data => {
+              alert(data.message);
+              window.location.reload();
+            }).catch(error => {
+              alert('Error: ' + error.message);
+            });
+          }
         });
       });
 
@@ -335,25 +325,26 @@ session bpp:i:32
         form.addEventListener('submit', function(e) {
           e.preventDefault();
           const id = this.querySelector('input[name="id"]').value;
-          fetch(`/device`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              id: id,
-              restart: true
-            })
-          }).then(response => response.json()).then(data => {
-            alert(data.message);
-            window.location.reload();
-          }).catch(error => {
-            alert('Error: ' + error.message);
-          });
+          if (confirm('Are you sure you want to restart this device?')) {
+            fetch(`/device`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                id: id,
+                restart: true
+              })
+            }).then(response => response.json()).then(data => {
+              alert(data.message);
+              window.location.reload();
+            }).catch(error => {
+              alert('Error: ' + error.message);
+            });
+          }
         });
       });
 
-      // Tạo biểu đồ cho cột Thread
       function createThreadChart(chartId, currentThread, totalThread, threadId) {
         const ctx = document.getElementById(chartId).getContext('2d');
         let chartStatus = Chart.getChart(chartId);
@@ -361,9 +352,9 @@ session bpp:i:32
           chartStatus.destroy();
         }
 
-        const progress = (currentThread / totalThread) * 100 || 0; // Tránh chia cho 0
+        const progress = (currentThread / totalThread) * 100 || 0;
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#00b894'] : progress > 80 ? ['#00b894', '#e9ecef'] : progress > 50 ? ['#fdcb6e', '#e9ecef'] :  ['#e84393', '#e9ecef'];
+        const backgroundColors = progress === 100 ? ['#3182ce'] : ['#3182ce', '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -377,7 +368,7 @@ session bpp:i:32
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            rotation: Math.PI, // Lật 180 độ (đảo ngược từ đỉnh xuống đáy)
+            rotation: Math.PI,
             circumference: 360,
             plugins: {
               legend: {
@@ -400,9 +391,9 @@ session bpp:i:32
           chartStatus.destroy();
         }
 
-        const progress = (currentRam / totalRam) * 100 || 0; // Tránh chia cho 0
+        const progress = (currentRam / totalRam) * 100 || 0;
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#2C3A47'] : ['#2C3A47', '#e9ecef'];
+        const backgroundColors = progress === 100 ? ['#3182ce'] : ['#3182ce', '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -416,7 +407,7 @@ session bpp:i:32
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            rotation: Math.PI, // Lật 180 độ (đảo ngược từ đỉnh xuống đáy)
+            rotation: Math.PI,
             circumference: 360,
             plugins: {
               legend: {
@@ -443,7 +434,7 @@ session bpp:i:32
         }
         
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#2C3A47'] : ['#2C3A47', '#e9ecef'];
+        const backgroundColors = progress === 100 ? ['#3182ce'] : ['#3182ce', '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -457,7 +448,7 @@ session bpp:i:32
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            rotation: Math.PI, // Lật 180 độ (đảo ngược từ đỉnh xuống đáy)
+            rotation: Math.PI,
             circumference: 360,
             plugins: {
               legend: {
@@ -473,7 +464,7 @@ session bpp:i:32
         document.getElementById(threadId).textContent = `${(progress || 0).toFixed(1)}%`;
       }
 
-     document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', () => {
   {% if devices %}
     {% for device in devices %}
       {% if device.currentThread is not none and device.totalThread is not none %}
@@ -496,7 +487,6 @@ session bpp:i:32
     {% endfor %}
   {% endif %}
 });
-
     </script>
   </body>
 </html>
