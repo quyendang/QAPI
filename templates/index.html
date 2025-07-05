@@ -347,6 +347,10 @@ session bpp:i:32
           }
         });
       });
+	  
+	  
+	  
+	
 
       function createThreadChart(chartId, currentThread, totalThread, threadId) {
         const ctx = document.getElementById(chartId).getContext('2d');
@@ -357,7 +361,15 @@ session bpp:i:32
 
         const progress = (currentThread / totalThread) * 100 || 0;
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#3182ce'] : ['#3182ce', '#e2e8f0'];
+		// Tạo gradient 6 màu custom
+		  const gradient = ctx.createLinearGradient(0, 0, 200, 0);
+		  gradient.addColorStop(0, "#B243B6");    // Deep Fuchsia
+		  gradient.addColorStop(0.2, "#F363B1");  // Hot Pink
+		  gradient.addColorStop(0.4, "#FDBF3B");  // Saffron
+		  gradient.addColorStop(0.6, "#F7F570");  // Sunny
+		  gradient.addColorStop(0.8, "#93EE81");  // Light Green
+		  gradient.addColorStop(1, "#47D4C4");    // Medium Turquoise
+        const backgroundColors = progress === 100 ? [gradient] : [gradient, '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -396,7 +408,15 @@ session bpp:i:32
 
         const progress = (currentRam / totalRam) * 100 || 0;
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#3182ce'] : ['#3182ce', '#e2e8f0'];
+        // Tạo gradient 6 màu custom
+		  const gradient = ctx.createLinearGradient(0, 0, 200, 0);
+		  gradient.addColorStop(0, "#B243B6");    // Deep Fuchsia
+		  gradient.addColorStop(0.2, "#F363B1");  // Hot Pink
+		  gradient.addColorStop(0.4, "#FDBF3B");  // Saffron
+		  gradient.addColorStop(0.6, "#F7F570");  // Sunny
+		  gradient.addColorStop(0.8, "#93EE81");  // Light Green
+		  gradient.addColorStop(1, "#47D4C4");    // Medium Turquoise
+        const backgroundColors = progress === 100 ? [gradient] : [gradient, '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
@@ -437,7 +457,15 @@ session bpp:i:32
         }
         
         const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#3182ce'] : ['#3182ce', '#e2e8f0'];
+        // Tạo gradient 6 màu custom
+		  const gradient = ctx.createLinearGradient(0, 0, 200, 0);
+		  gradient.addColorStop(0, "#B243B6");    // Deep Fuchsia
+		  gradient.addColorStop(0.2, "#F363B1");  // Hot Pink
+		  gradient.addColorStop(0.4, "#FDBF3B");  // Saffron
+		  gradient.addColorStop(0.6, "#F7F570");  // Sunny
+		  gradient.addColorStop(0.8, "#93EE81");  // Light Green
+		  gradient.addColorStop(1, "#47D4C4");    // Medium Turquoise
+        const backgroundColors = progress === 100 ? [gradient] : [gradient, '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
