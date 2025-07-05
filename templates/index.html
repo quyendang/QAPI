@@ -205,8 +205,8 @@
               <th>Connect</th>
               <th>CPU (%)</th>
               <th>RAM (/)</th>
+			  <th>Thread</th>
               <th>Client</th>
-              <th>Thread</th>
               <th>R/TO</th>
               <th>Last Update</th>
               <th>Action</th>
@@ -241,12 +241,7 @@
                 </div>
               {% else %} N/A {% endif %}
               </td>
-              <td>
-                {{ parts[0]|upper or 'N/A' }} <span class="badge" style="background-color: {% if not parts[1] %}#718096{% elif parts[1]|lower == 'a' %}#d69e2e{% elif parts[1]|upper == 'PRO' %}#3182ce{% else %}#38a169{% endif %}">
-        {% if not parts[1] %}N{% elif parts[1]|lower == 'a' %}A{% elif parts[1]|upper == 'PRO' %}P{% else %}{{parts[1]|upper}}{% endif %}
-    </span>
-              </td>
-              <td> {% if device.currentThread is not none and device.totalThread is not none %}
+			  <td> {% if device.currentThread is not none and device.totalThread is not none %}
                 <div class="progress-chart">
                   <canvas id="chart{{ loop.index }}"></canvas>
                 </div>
@@ -254,6 +249,11 @@
                   <span id="thread{{ loop.index }}"></span>
                 </div>
               {% else %} N/A {% endif %}
+              </td>
+              <td>
+                {{ parts[0]|upper or 'N/A' }} <span class="badge" style="background-color: {% if not parts[1] %}#718096{% elif parts[1]|lower == 'a' %}#d69e2e{% elif parts[1]|upper == 'PRO' %}#3182ce{% else %}#38a169{% endif %}">
+        {% if not parts[1] %}N{% elif parts[1]|lower == 'a' %}A{% elif parts[1]|upper == 'PRO' %}P{% else %}{{parts[1]|upper}}{% endif %}
+    </span>
               </td>
               <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} / {{ device.counter5 or 'N/A' }}s</td>
               <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
