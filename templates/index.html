@@ -450,50 +450,69 @@ session bpp:i:32
       }
 
       function createCPUChart(chartId, progress, threadId) {
-        const ctx = document.getElementById(chartId).getContext('2d');
-        let chartStatus = Chart.getChart(chartId);
-        if (chartStatus) {
-          chartStatus.destroy();
+  const ctx = document.getElementById(chartId).getContext('2d');
+  let chartStatus = Chart.getChart(chartId);
+  if (chartStatus) {
+    chartStatus.destroy();
+  }
+
+  let data = [];
+  let backgroundColors = [];
+
+  if (progress === 100) {
+    // 6 phần = 100% chia đều
+    for (let i = 0; i < 6; i++) {
+      data.push(100 / 6);
+    }
+  } else {
+    // 6 phần = progress chia đều, cộng 1 phần còn lại = 100-progress
+    for (let i = 0; i < 6; i++) {
+      data.push(progress / 6);
+    }
+    data.push(100 - progress);
+  }
+
+  backgroundColors = [
+    "#B243B6", // Deep Fuchsia
+    "#F363B1", // Hot Pink
+    "#FDBF3B", // Saffron
+    "#F7F570", // Sunny
+    "#93EE81", // Light Green
+    "#47D4C4", // Medium Turquoise
+  ];
+
+  if (progress !== 100) {
+    backgroundColors.push("#e2e8f0"); // phần còn lại
+  }
+
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      datasets: [{
+        data: data,
+        backgroundColor: backgroundColors,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      rotation: Math.PI,
+      circumference: 360,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          enabled: false
         }
-        
-        const data = progress === 100 ? [100] : [progress, 100 - progress];
-        // Tạo gradient 6 màu custom
-		  const gradient = ctx.createLinearGradient(0, 0, 200, 0);
-		  gradient.addColorStop(0, "#B243B6");    // Deep Fuchsia
-		  gradient.addColorStop(0.2, "#F363B1");  // Hot Pink
-		  gradient.addColorStop(0.4, "#FDBF3B");  // Saffron
-		  gradient.addColorStop(0.6, "#F7F570");  // Sunny
-		  gradient.addColorStop(0.8, "#93EE81");  // Light Green
-		  gradient.addColorStop(1, "#47D4C4");    // Medium Turquoise
-        const backgroundColors = progress === 100 ? [gradient] : [gradient, '#e2e8f0'];
-
-        new Chart(ctx, {
-          type: 'pie',
-          data: {
-            datasets: [{
-              data: data,
-              backgroundColor: backgroundColors,
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            rotation: Math.PI,
-            circumference: 360,
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                enabled: false
-              }
-            }
-          }
-        });
-
-        document.getElementById(threadId).textContent = `${(progress || 0).toFixed(1)}%`;
       }
+    }
+  });
+
+  document.getElementById(threadId).textContent = `${(progress || 0).toFixed(1)}%`;
+}
+
 
       document.addEventListener('DOMContentLoaded', () => {
   {% if devices %}
