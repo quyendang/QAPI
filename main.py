@@ -548,7 +548,7 @@ async def homepage(request: Request):
     memory_total = round(memory.total / (1024 ** 3), 2)
     memory_used = round(memory.used / (1024 ** 3), 2)
     memory_percent = memory.percent
-    return templates.TemplateResponse("index2.html", {
+    return templates.TemplateResponse("index.html", {
         "request": request,
         "total_ips": total_ips,
         "cpu_percent": cpu_percent,
