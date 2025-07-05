@@ -204,8 +204,8 @@
               <th>IP</th>
               <th>Connect</th>
               <th>CPU (%)</th>
-              <th>RAM (/)</th>
 			  <th>Thread</th>
+			  <th>RAM (/)</th>
               <th>Client</th>
               <th>R/TO</th>
               <th>Last Update</th>
@@ -232,21 +232,21 @@
                 </div>
               {% else %} N/A {% endif %}
               </td>
-              <td> {% if device.ram_used is not none and device.ram_total is not none %} 
-                <div class="progress-chart">
-                  <canvas id="chartram{{ loop.index }}"></canvas>
-                </div>
-                <div class="usage-info">
-                  <span id="threadram{{ loop.index }}"></span>
-                </div>
-              {% else %} N/A {% endif %}
-              </td>
 			  <td> {% if device.currentThread is not none and device.totalThread is not none %}
                 <div class="progress-chart">
                   <canvas id="chart{{ loop.index }}"></canvas>
                 </div>
                 <div class="usage-info">
                   <span id="thread{{ loop.index }}"></span>
+                </div>
+              {% else %} N/A {% endif %}
+              </td>
+              <td> {% if device.ram_used is not none and device.ram_total is not none %} 
+                <div class="progress-chart">
+                  <canvas id="chartram{{ loop.index }}"></canvas>
+                </div>
+                <div class="usage-info">
+                  <span id="threadram{{ loop.index }}"></span>
                 </div>
               {% else %} N/A {% endif %}
               </td>
