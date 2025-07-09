@@ -44,13 +44,17 @@ class Device(BaseModel):
     restart: bool = False
     totalThread: int | None = 0
     currentThread: int | None = 0
+    proxyTraffic: float | None = 0
+    bypassTraffic: float | None = 0
 
 # Initialize FastAPI app and globals
 app = FastAPI()
 reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 geoip_lock = threading.Lock()
 templates = Jinja2Templates(directory="templates")
-connected_websockets = set()
+connected
+
+_websockets = set()
 country_data = []
 language_map: Dict[str, str] = {}
 offset_map: Dict[str, int] = {}
@@ -164,7 +168,9 @@ async def create_tables():
             runtime INTEGER DEFAULT 0,
             restart BOOLEAN DEFAULT FALSE,
             totalThread INTEGER DEFAULT 0,
-            currentThread INTEGER DEFAULT 0
+            currentThread INTEGER DEFAULT 0,
+            proxyTraffic DOUBLE PRECISION DEFAULT 0,
+            bypassTraffic DOUBLE PRECISION DEFAULT 0
         )
         ''')
         await conn.execute('''
@@ -211,6 +217,14 @@ async def create_tables():
         ADD COLUMN IF NOT EXISTS currentThread INTEGER DEFAULT 0
         ''')
         await conn.execute('''
+        ALTER TABLE devices 
+        ADD COLUMN IF NOT EXISTS proxyTraffic DOUBLE PRECISION DEFAULT 0
+        ''')
+        await conn.execute('''
+        ALTER TABLE devices 
+        ADD COLUMN IF NOT EXISTS bypassTraffic DOUBLE PRECISION DEFAULT 0
+        ''')
+        await conn.execute('''
         UPDATE devices 
         SET ram_total = COALESCE(ram_total, 0),
             ram_used = COALESCE(ram_used, 0),
@@ -223,7 +237,9 @@ async def create_tables():
             runtime = COALESCE(runtime, 0),
             restart = COALESCE(restart, FALSE),
             totalThread = COALESCE(totalThread, 0),
-            currentThread = COALESCE(currentThread, 0)
+            currentThread = COALESCE(currentThread, 0),
+            proxyTraffic = COALESCE(proxyTraffic, 0),
+            bypassTraffic = COALESCE(bypassTraffic, 0)
         ''')
         # Add index on ip_records(ip)
         await conn.execute('''
@@ -374,7 +390,7 @@ async def get_devices(id: Optional[str] = Query(None)):
                     """
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
                            last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
-                           totalThread, currentThread
+                           totalThread, currentThread, proxyTraffic, bypassTraffic
                     FROM devices WHERE id = $1
                     """, id
                 )
@@ -384,14 +400,15 @@ async def get_devices(id: Optional[str] = Query(None)):
                     id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                     cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                     counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
+                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16],
+                    proxyTraffic=row[17], bypassTraffic=row[18]
                 )]
             else:
                 rows = await conn.fetch(
                     """
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
                            last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
-                           totalThread, currentThread
+                           totalThread, currentThread, proxyTraffic, bypassTraffic
                     FROM devices
                     """
                 )
@@ -400,7 +417,8 @@ async def get_devices(id: Optional[str] = Query(None)):
                         id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                         cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                         counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                        runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
+                        runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16],
+                        proxyTraffic=row[17], bypassTraffic=row[18]
                     ) for row in rows
                 ]
         except Exception as e:
@@ -430,7 +448,7 @@ async def add_or_update_device(device: Device):
                     """
                     SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
                            last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
-                           totalThread, currentThread
+                           totalThread, currentThread, proxyTraffic, bypassTraffic
                     FROM devices WHERE id = $1
                     """, device.id
                 )
@@ -439,7 +457,8 @@ async def add_or_update_device(device: Device):
                         id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                         cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                         counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                        runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
+                        runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16],
+                        proxyTraffic=row[17], bypassTraffic=row[18]
                     )]
                 else:
                     raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
@@ -457,7 +476,8 @@ async def add_or_update_device(device: Device):
                     id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                     cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                     counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
+                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16],
+                    proxyTraffic=row[17], bypassTraffic=row[18]
                 )]
         except Exception as e:
             logging.error(f"Error occurred: {str(e)}")
@@ -487,7 +507,7 @@ async def patch_device(device: Device):
                 """
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
                        last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
-                       totalThread, currentThread
+                       totalThread, currentThread, proxyTraffic, bypassTraffic
                 FROM devices WHERE id = $1
                 """, device.id
             )
@@ -496,7 +516,8 @@ async def patch_device(device: Device):
                     id=row[0], ip=row[1], country_code=row[2], ram_total=row[3], ram_used=row[4],
                     cpu_percent=row[5], description=row[6], last_update=row[7], counter1=row[8],
                     counter2=row[9], counter3=row[10], counter4=row[11], counter5=row[12],
-                    runtime=row[13], restart=row[14], totalThread=row[15], currentThread=row[16]
+                    runtime=row-pyr[13], restart=row[14], totalThread=row[15], currentThread=row[16],
+                    proxyTraffic=row[17], bypassTraffic=row[18]
                 )]
             else:
                 raise HTTPException(status_code=404, detail=f"Device {device.id} not found after update")
@@ -526,7 +547,7 @@ async def homepage(request: Request):
                 """
                 SELECT id, ip, country_code, ram_total, ram_used, cpu_percent, description,
                        last_update, counter1, counter2, counter3, counter4, counter5, runtime, restart,
-                       totalThread, currentThread
+                       totalThread, currentThread, proxyTraffic, bypassTraffic
                 FROM devices
                 """
             )
@@ -536,7 +557,8 @@ async def homepage(request: Request):
                     "ram_used": row[4], "cpu_percent": row[5], "description": row[6],
                     "last_update": row[7], "counter1": row[8], "counter2": row[9],
                     "counter3": row[10], "counter4": row[11], "counter5": row[12],
-                    "runtime": row[13], "restart": row[14], "totalThread": row[15], "currentThread": row[16]
+                    "runtime": row[13], "restart": row[14], "totalThread": row[15], "currentThread": row[16],
+                    "proxyTraffic": row[17], "bypassTraffic": row[18]
                 } for row in rows
             ]
         except Exception as e:
@@ -566,7 +588,7 @@ async def delete_ips_from_button():
 
 @app.get("/country")
 def get_country(countrys: str, proxy: str):
-    country_list = countrys.split(",")
+    country Gymnast = countrys.split(",")
     if proxy not in proxy_country_mapping or not proxy_country_mapping[proxy]:
         proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
     selected_country = proxy_country_mapping[proxy].pop(0)
