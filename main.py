@@ -222,7 +222,7 @@ async def create_tables():
         ALTER TABLE devices 
         ADD COLUMN IF NOT EXISTS bypassTraffic DOUBLE PRECISION DEFAULT 0
         ''')
-       await conn.execute('''
+        await conn.execute('''
         UPDATE devices 
         SET ram_total = COALESCE(ram_total, 0),
             ram_used = COALESCE(ram_used, 0),
