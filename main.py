@@ -52,9 +52,7 @@ app = FastAPI()
 reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 geoip_lock = threading.Lock()
 templates = Jinja2Templates(directory="templates")
-connected
-
-_websockets = set()
+connected_websockets = set()
 country_data = []
 language_map: Dict[str, str] = {}
 offset_map: Dict[str, int] = {}
@@ -224,7 +222,7 @@ async def create_tables():
         ALTER TABLE devices 
         ADD COLUMN IF NOT EXISTS bypassTraffic DOUBLE PRECISION DEFAULT 0
         ''')
-        await conn.execute('''
+       await conn.execute('''
         UPDATE devices 
         SET ram_total = COALESCE(ram_total, 0),
             ram_used = COALESCE(ram_used, 0),
@@ -586,6 +584,15 @@ async def delete_ips_from_button():
     await delete_old_ips()
     return RedirectResponse("/", status_code=303)
 
+@app.get("/country")
+def get_country(countrys: str, proxy: str):
+    country_list = countrys.split(",")
+    if proxy not in proxy_country_mapping or not proxy_country_mapping[proxy]:
+        proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
+    selected_country = proxy_country_mapping[proxy].pop(0)
+    if not proxy_country_mapping[proxy]:
+        proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
+    return {"proxy": proxy, "country": selected_country}
 
 @app.get("/geteid")
 async def get_eid(version: str = "v9.2.0"):
