@@ -258,7 +258,7 @@
               </td>
 			  <td>
                 {% if device.proxyTraffic is not none and device.bypassTraffic is not none %}
-                {{ device.proxyTraffic|round(2) }} GB ({{ device.bypassTraffic|round(2) }} GB)
+                {{ device.proxyTraffic|round(2) }} GB (↓{{ device.bypassTraffic|round(2) }} GB)
                 {% else %}
                 N/A
                 {% endif %}
