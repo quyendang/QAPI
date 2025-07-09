@@ -586,15 +586,6 @@ async def delete_ips_from_button():
     await delete_old_ips()
     return RedirectResponse("/", status_code=303)
 
-@app.get("/country")
-def get_country(countrys: str, proxy: str):
-    country Gymnast = countrys.split(",")
-    if proxy not in proxy_country_mapping or not proxy_country_mapping[proxy]:
-        proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
-    selected_country = proxy_country_mapping[proxy].pop(0)
-    if not proxy_country_mapping[proxy]:
-        proxy_country_mapping[proxy] = random.sample(country_list, len(country_list))
-    return {"proxy": proxy, "country": selected_country}
 
 @app.get("/geteid")
 async def get_eid(version: str = "v9.2.0"):
