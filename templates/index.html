@@ -203,9 +203,8 @@
               <th>Country</th>
               <th>IP</th>
               <th>Connect</th>
-              <th>CPU (%)</th>
+              <th>Sys</th>
 			  <th>Thread</th>
-			  <th>RAM (/)</th>
               <th>Client</th>
 			  <th>Traffic</th>
               <th>R/TO</th>
@@ -239,15 +238,6 @@
                 </div>
                 <div class="usage-info">
                   <span id="thread{{ loop.index }}"></span>
-                </div>
-              {% else %} N/A {% endif %}
-              </td>
-              <td> {% if device.ram_used is not none and device.ram_total is not none %} 
-                <div class="progress-chart">
-                  <canvas id="chartram{{ loop.index }}"></canvas>
-                </div>
-                <div class="usage-info">
-                  <span id="threadram{{ loop.index }}"></span>
                 </div>
               {% else %} N/A {% endif %}
               </td>
@@ -441,31 +431,33 @@ session bpp:i:32
         document.getElementById(threadId).textContent = `${ramUsedGB.toFixed(1)}GB / ${ramTotalGB.toFixed(1)}GB`;
       }
 
-      function createCPUChart(chartId, progress, threadId) {
-        const ctx = document.getElementById(chartId).getContext('2d');
-        let chartStatus = Chart.getChart(chartId);
-        if (chartStatus) {
-          chartStatus.destroy();
-        }
-        
-        const data = progress === 100 ? [100] : [progress, 100 - progress];
-        const backgroundColors = progress === 100 ? ['#eb4d4b'] : ['#eb4d4b', '#e2e8f0'];
-
-        new Chart(ctx, {
-          type: 'pie',
-          data: {
-            datasets: [{
-              data: data,
-              backgroundColor: backgroundColors,
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            rotation: Math.PI,
-            circumference: 360,
-            plugins: {
+      function createSysChart(chartId, cpuPercent, ramPercent, threadId) {
+		  const data = {
+		  datasets: [{
+			data: [
+			  cpuPercent,        // CPU Used
+			  100 - cpuPercent,  // CPU Free
+			  ramPercent,        // RAM Used
+			  100 - ramPercent   // RAM Free
+			],
+			backgroundColor: [
+			  '#eb4d4b',   // CPU Used (xanh dương)
+			  '#e2e8f0',   // CPU Free (xanh nhạt)
+			  '#28a745',   // RAM Used (xanh lá)
+			  '#e2e8f0'    // RAM Free (xanh nhạt)
+			],
+			borderWidth: 2,
+			borderColor: '#ffffff',
+		  }]
+		};
+		const config = {
+		  type: 'doughnut',
+		  data: data,
+		  options: {
+			rotation: -90, // Xoay để CPU bắt đầu từ bên phải
+			circumference: 360, // Đầy đủ 360 độ
+			cutout: '30%', // Độ rỗng bên trong
+			plugins: {
               legend: {
                 display: false
               },
@@ -473,10 +465,21 @@ session bpp:i:32
                 enabled: false
               }
             }
-          }
-        });
+		  }
+		};
+	  
+	  
+	  
+        const ctx = document.getElementById(chartId).getContext('2d');
+        let chartStatus = Chart.getChart(chartId);
+        if (chartStatus) {
+          chartStatus.destroy();
+        }
+        
 
-        document.getElementById(threadId).textContent = `${(progress || 0).toFixed(1)}%`;
+        new Chart(ctx, config);
+
+        document.getElementById(threadId).textContent = `${(cpuPercent || 0).toFixed(1)}%|${(ramPercent || 0).toFixed(1)}`;
       }
 
       document.addEventListener('DOMContentLoaded', () => {
@@ -487,18 +490,16 @@ session bpp:i:32
       {% else %}
         document.getElementById('thread{{ loop.index }}').textContent = 'N/A';
       {% endif %}
-
-      {% if device.ram_used is not none and device.ram_total is not none %}
-        createRamChart('chartram{{ loop.index }}', {{ device.ram_used|default(0) }}, {{ device.ram_total|default(0) }}, 'threadram{{ loop.index }}');
-      {% else %}
-        document.getElementById('threadram{{ loop.index }}').textContent = 'N/A';
-      {% endif %}
-
-      {% if device.cpu_percent is not none %}
-        createCPUChart('chartcpu{{ loop.index }}', {{ device.cpu_percent|default(0) }}, 'threadcpu{{ loop.index }}');
-      {% else %}
-        document.getElementById('threadcpu{{ loop.index }}').textContent = 'N/A';
-      {% endif %}
+      {% if device.cpu_percent is not none and device.ram_used is not none and device.ram_total is not none and device.ram_total > 0 %}
+  createSysChart(
+    'chartcpu{{ loop.index }}',
+    {{ device.cpu_percent|default(0) }},
+    {{ (device.ram_used * 100 / device.ram_total)|round(1) }},
+    'threadcpu{{ loop.index }}'
+  );
+{% else %}
+  document.getElementById('threadcpu{{ loop.index }}').textContent = 'N/A';
+{% endif %}
     {% endfor %}
   {% endif %}
 });
