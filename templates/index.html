@@ -454,9 +454,9 @@ session bpp:i:32
 		  type: 'doughnut',
 		  data: data,
 		  options: {
-			rotation: -90, // Xoay để CPU bắt đầu từ bên phải
+			rotation: -180, // Xoay để CPU bắt đầu từ bên phải
 			circumference: 360, // Đầy đủ 360 độ
-			cutout: '30%', // Độ rỗng bên trong
+			cutout: '10%', // Độ rỗng bên trong
 			plugins: {
               legend: {
                 display: false
@@ -479,7 +479,7 @@ session bpp:i:32
 
         new Chart(ctx, config);
 
-        document.getElementById(threadId).textContent = `${(cpuPercent || 0).toFixed(1)}%|${(ramPercent || 0).toFixed(1)}`;
+        document.getElementById(threadId).textContent = `C:${(cpuPercent || 0).toFixed(1)}%-R:${(ramPercent || 0).toFixed(1)}%`;
       }
 
       document.addEventListener('DOMContentLoaded', () => {
