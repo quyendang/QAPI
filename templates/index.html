@@ -196,92 +196,83 @@
         </div>
       </div>
       <div class="account-section">
-        <h2>Devices</h2>
-        {% if devices %}
-        <table class="table table-striped">
+        <h2>Devices</h2> {% if devices %} <table class="table table-striped">
           <thead>
             <tr>
               <th>No.</th>
               <th>Country</th>
               <th>IP</th>
               <th>Connect</th>
-              <th>CPU & RAM</th>
+              <th>CPU (%)</th>
+			  <th>Thread</th>
+			  <th>RAM (/)</th>
               <th>Client</th>
-              <th>Traffic</th>
+			  <th>Traffic</th>
               <th>R/TO</th>
               <th>Last Update</th>
               <th>Action</th>
             </tr>
           </thead>
-          <tbody>
-            {% for device in devices %}
-            {% set last_update_time = device.last_update|datetime_from_timestamp %}
-            {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %}
-            {% set parts = device.id.split('-') %}
-            <tr {% if is_old %}class="table-danger"{% endif %}>
+          <tbody> {% for device in devices %} {% set last_update_time = device.last_update|datetime_from_timestamp %} {% set is_old = last_update_time and (now|datetime_from_timestamp - last_update_time).total_seconds() > 900 %} {% set parts = device.id.split('-') %} <tr {% if is_old %}class="table-danger" {% endif %}>
               <td>{{ loop.index }}</td>
               <td>
                 <span class="fi fi-{{ device.country_code|lower }}"></span> {{ device.country_code or 'N/A' }}
               </td>
               <td>{{ device.ip or 'N/A' }}</td>
-              <td>
-                {% if device.ip is not none %}
-                <button type="button" onclick="createRDPFile('{{device.ip}}', '{{device.id}}')" class="btn custom-btn btn-sm d-inline-flex align-items-center">
+              <td> {% if device.ip is not none %} <button type="button" onclick="createRDPFile('{{device.ip}}', '{{device.id}}')" class="btn custom-btn btn-sm d-inline-flex align-items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
                   </svg>
-                </button>
-                {% else %}
-                N/A
-                {% endif %}
-              </td>
-              <td>
-                {% if device.cpu_percent is not none and device.ram_used is not none and device.ram_total is not none %}
+                </button> {% else %} N/A {% endif %} </td>
+              <td> {% if device.cpu_percent is not none %} 
                 <div class="progress-chart">
-                  <canvas id="chartcombined{{ loop.index }}"></canvas>
+                  <canvas id="chartcpu{{ loop.index }}"></canvas>
                 </div>
                 <div class="usage-info">
-                  <span id="usage{{ loop.index }}"></span>
+                  <span id="threadcpu{{ loop.index }}"></span>
                 </div>
-                {% else %}
-                N/A
-                {% endif %}
+              {% else %} N/A {% endif %}
+              </td>
+			  <td> {% if device.currentThread is not none and device.totalThread is not none %}
+                <div class="progress-chart">
+                  <canvas id="chart{{ loop.index }}"></canvas>
+                </div>
+                <div class="usage-info">
+                  <span id="thread{{ loop.index }}"></span>
+                </div>
+              {% else %} N/A {% endif %}
+              </td>
+              <td> {% if device.ram_used is not none and device.ram_total is not none %} 
+                <div class="progress-chart">
+                  <canvas id="chartram{{ loop.index }}"></canvas>
+                </div>
+                <div class="usage-info">
+                  <span id="threadram{{ loop.index }}"></span>
+                </div>
+              {% else %} N/A {% endif %}
               </td>
               <td>
-                {{ parts[0]|upper or 'N/A' }}
-                <span class="badge" style="background-color: {% if not parts[1] %}#718096{% elif parts[1]|lower == 'a' %}#d69e2e{% elif parts[1]|upper == 'PRO' %}#3182ce{% else %}#38a169{% endif %}">
-                  {% if not parts[1] %}N{% elif parts[1]|lower == 'a' %}A{% elif parts[1]|upper == 'PRO' %}P{% else %}{{parts[1]|upper}}{% endif %}
-                </span>
+                {{ parts[0]|upper or 'N/A' }} <span class="badge" style="background-color: {% if not parts[1] %}#718096{% elif parts[1]|lower == 'a' %}#d69e2e{% elif parts[1]|upper == 'PRO' %}#3182ce{% else %}#38a169{% endif %}">
+        {% if not parts[1] %}N{% elif parts[1]|lower == 'a' %}A{% elif parts[1]|upper == 'PRO' %}P{% else %}{{parts[1]|upper}}{% endif %}
+    </span>
               </td>
-              <td>
+			  <td>
                 {% if device.proxyTraffic is not none and device.bypassTraffic is not none %}
                 {{ device.proxyTraffic|round(2) }} GB (↓{{ device.bypassTraffic|round(2) }} GB)
                 {% else %}
                 N/A
                 {% endif %}
-              </td>
-              <td>
-                {% if device.runtime %}
-                {{ device.runtime|run_time }}
-                {% else %}
-                N/A
-                {% endif %} / {{ device.counter5 or 'N/A' }}s
-              </td>
-              <td>
-                {% if device.last_update %}
-                {{ last_update_time|time_ago }}
-                {% else %}
-                N/A
-                {% endif %}
-              </td>
+            </td>
+              <td> {% if device.runtime %} {{ device.runtime|run_time }} {% else %} N/A {% endif %} / {{ device.counter5 or 'N/A' }}s</td>
+              <td> {% if device.last_update %} {{ last_update_time|time_ago }} {% else %} N/A {% endif %} </td>
               <td>
                 <div class="d-flex gap-2">
                   <form action="/device" method="delete">
                     <input type="hidden" name="id" value="{{ device.id }}">
                     <button class="btn custom-btn-delete btn-sm d-inline-flex align-items-center" type="submit">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
-                      </svg>
+  <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+</svg>
                     </button>
                   </form>
                   <form action="/device" method="patch">
@@ -289,20 +280,15 @@
                     <input type="hidden" name="restart" value="true">
                     <button class="btn custom-btn-restart btn-sm d-inline-flex align-items-center" type="submit">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
-                        <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
-                      </svg>
+  <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+  <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
+</svg>
                     </button>
                   </form>
                 </div>
               </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p>No devices found.</p>
-        {% endif %}
+            </tr> {% endfor %} </tbody>
+        </table> {% else %} <p>No devices found.</p> {% endif %}
       </div>
     </div>
     <script>
@@ -315,7 +301,7 @@ prompt for credentials:i:1
 authentication level:i:2
 screen mode id:i:2
 desktopwidth:i:1920
-desktop151height:i:1080
+desktopheight:i:1080
 session bpp:i:32
 `.trim();
         const blob = new Blob([rdpContent], {
@@ -369,77 +355,153 @@ session bpp:i:32
           }
         });
       });
+	  
+	  
+	  
+	  
 
-      function createCombinedUsageChart(chartId, cpuPercent, ramUsed, ramTotal, usageId) {
+      function createThreadChart(chartId, currentThread, totalThread, threadId) {
         const ctx = document.getElementById(chartId).getContext('2d');
         let chartStatus = Chart.getChart(chartId);
         if (chartStatus) {
           chartStatus.destroy();
         }
 
-        const ramPercent = (ramUsed / ramTotal) * 100 || 0;
-        const cpuFree = 100 - (cpuPercent || 0);
-        const ramFree = 100 - ramPercent;
-        const data = [
-          cpuPercent || 0,  // CPU Used
-          cpuFree,          // CPU Free
-          ramPercent,       // RAM Used
-          ramFree           // RAM Free
-        ];
-        const backgroundColors = [
-          '#007bff',   // CPU Used (blue)
-          '#d0e7ff',   // CPU Free (light blue)
-          '#28a745',   // RAM Used (green)
-          '#c8f5d2'    // RAM Free (light green)
-        ];
+        const progress = (currentThread / totalThread) * 100 || 0;
+        const data = progress === 100 ? [100] : [progress, 100 - progress];
+        const backgroundColors = progress === 100 ? ['#eb4d4b'] : ['#eb4d4b', '#e2e8f0'];
 
         new Chart(ctx, {
           type: 'pie',
           data: {
-            labels: ['CPU Used', 'CPU Free', 'RAM Used', 'RAM Free'],
             datasets: [{
               data: data,
               backgroundColor: backgroundColors,
-              borderWidth: 2,
-              borderColor: '#ffffff'
+              borderWidth: 0
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            rotation: -90,
+            rotation: Math.PI,
             circumference: 360,
             plugins: {
               legend: {
                 display: false
               },
               tooltip: {
-                callbacks: {
-                  label: function(ctx) {
-                    return `${ctx.label}: ${ctx.raw.toFixed(1)}%`;
-                  }
-                }
+                enabled: false
               }
             }
           }
         });
 
-        const ramUsedGB = (ramUsed || 0) / 1024;
-        const ramTotalGB = (ramTotal || 0) / 1024;
-        document.getElementById(usageId).textContent = `CPU: ${cpuPercent.toFixed(1)}%, RAM: ${ramUsedGB.toFixed(1)}GB / ${ramTotalGB.toFixed(1)}GB`;
+        document.getElementById(threadId).textContent = `${currentThread || 0}/${totalThread || 0}`;
+      }
+
+      function createRamChart(chartId, currentRam, totalRam, threadId) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        let chartStatus = Chart.getChart(chartId);
+        if (chartStatus) {
+          chartStatus.destroy();
+        }
+
+        const progress = (currentRam / totalRam) * 100 || 0;
+        const data = progress === 100 ? [100] : [progress, 100 - progress];
+        const backgroundColors = progress === 100 ? ['#eb4d4b'] : ['#eb4d4b', '#e2e8f0'];
+
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            datasets: [{
+              data: data,
+              backgroundColor: backgroundColors,
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: Math.PI,
+            circumference: 360,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                enabled: false
+              }
+            }
+          }
+        });
+
+        const ramUsedGB = (currentRam || 0) / 1024;
+        const ramTotalGB = (totalRam || 0) / 1024;
+        
+        document.getElementById(threadId).textContent = `${ramUsedGB.toFixed(1)}GB / ${ramTotalGB.toFixed(1)}GB`;
+      }
+
+      function createCPUChart(chartId, progress, threadId) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        let chartStatus = Chart.getChart(chartId);
+        if (chartStatus) {
+          chartStatus.destroy();
+        }
+        
+        const data = progress === 100 ? [100] : [progress, 100 - progress];
+        const backgroundColors = progress === 100 ? ['#eb4d4b'] : ['#eb4d4b', '#e2e8f0'];
+
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            datasets: [{
+              data: data,
+              backgroundColor: backgroundColors,
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            rotation: Math.PI,
+            circumference: 360,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                enabled: false
+              }
+            }
+          }
+        });
+
+        document.getElementById(threadId).textContent = `${(progress || 0).toFixed(1)}%`;
       }
 
       document.addEventListener('DOMContentLoaded', () => {
-        {% if devices %}
-          {% for device in devices %}
-            {% if device.cpu_percent is not none and device.ram_used is not none and device.ram_total is not none %}
-              createCombinedUsageChart('chartcombined{{ loop.index }}', {{ device.cpu_percent|default(0) }}, {{ device.ram_used|default(0) }}, {{ device.ram_total|default(0) }}, 'usage{{ loop.index }}');
-            {% else %}
-              document.getElementById('usage{{ loop.index }}').textContent = 'N/A';
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      });
+  {% if devices %}
+    {% for device in devices %}
+      {% if device.currentThread is not none and device.totalThread is not none %}
+        createThreadChart('chart{{ loop.index }}', {{ device.currentThread|default(0) }}, {{ device.totalThread|default(0) }}, 'thread{{ loop.index }}');
+      {% else %}
+        document.getElementById('thread{{ loop.index }}').textContent = 'N/A';
+      {% endif %}
+
+      {% if device.ram_used is not none and device.ram_total is not none %}
+        createRamChart('chartram{{ loop.index }}', {{ device.ram_used|default(0) }}, {{ device.ram_total|default(0) }}, 'threadram{{ loop.index }}');
+      {% else %}
+        document.getElementById('threadram{{ loop.index }}').textContent = 'N/A';
+      {% endif %}
+
+      {% if device.cpu_percent is not none %}
+        createCPUChart('chartcpu{{ loop.index }}', {{ device.cpu_percent|default(0) }}, 'threadcpu{{ loop.index }}');
+      {% else %}
+        document.getElementById('threadcpu{{ loop.index }}').textContent = 'N/A';
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+});
     </script>
   </body>
 </html>
