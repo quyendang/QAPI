@@ -1,8 +1,8 @@
 import asyncio
 import asyncpg
 import aiohttp
-from fastapi import FastAPI, Query, Request, HTTPException, File, UploadFile, Form
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi import FastAPI, Query, Request, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -24,9 +24,7 @@ import re
 import threading
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import fcntl
-import whisper
-import shutil
-import uuid
+
 # Pydantic model for Device
 class Device(BaseModel):
     id: str
@@ -51,7 +49,6 @@ class Device(BaseModel):
 
 # Initialize FastAPI app and globals
 app = FastAPI()
-model = whisper.load_model("base")
 reader = geoip2.database.Reader('GeoLite2-City.mmdb')
 geoip_lock = threading.Lock()
 templates = Jinja2Templates(directory="templates")
@@ -67,8 +64,7 @@ EUROPEAN_COUNTRY_CODES = {
 }
 proxy_country_mapping = defaultdict(list)
 uk_ip_ranges = []
-UPLOAD_DIR = "./uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
@@ -622,27 +618,6 @@ async def get_eid(version: str = "v9.2.0"):
     except Exception as e:
         logging.error(f"Error fetching EID values: {str(e)}")
         return {"sdkLoaderEID": "318502621", "sdkLoaderEID2": "318500618", "version": "v9.2.0"}
-
-@app.post("/asr")
-async def transcribe_audio(file: UploadFile = File(...), language: str = Form("en")):
-    try:
-        # Save uploaded file to disk
-        filename = f"{uuid.uuid4()}.wav"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        with open(filepath, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # Transcribe using Whisper
-        result = model.transcribe(filepath, language=language)
-        text = result["text"]
-
-        # Clean up file
-        os.remove(filepath)
-
-        return JSONResponse(content={"text": text})
-
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.get("/check")
 async def check_ip(ip: str):
