@@ -17,3 +17,5 @@ slowapi
 cachetools
 aiohttp
 celery
+openai-whisper
+ffmpeg-python
