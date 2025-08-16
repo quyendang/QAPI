@@ -22,19 +22,33 @@ supabase: Client = create_client(supabase_url, supabase_key)
 @app.get("/share", response_class=HTMLResponse)
 async def share_lesson(
     request: Request,
-    id: str = Query(..., description="Lesson ID"),
+    id: str = Query(..., description="Lesson short_id"),
     c: str = Query("", description="Ẩn nội dung cột khi hiển thị, vd: 1,2,4"),
     p: str = Query("", description="Ẩn nội dung cột khi in, vd: 4,5"),
 ):
     try:
-        # Lấy words
+        # Lấy lesson theo short_id
+        lesson_resp = (
+            supabase.table("lessons")
+            .select("id, name")
+            .eq("short_id", id)
+            .single()
+            .execute()
+        )
+
+        if not lesson_resp.data:
+            raise ValueError(f"Lesson with short_id={id} not found")
+
+        lesson_id = lesson_resp.data["id"]
+        lesson_name = lesson_resp.data.get("name", f"Lesson {id}")
+
+        # Lấy words theo lesson_id
         response = (
             supabase.table("words")
             .select("*")
-            .eq("lesson_id", id)
+            .eq("lesson_id", lesson_id)
             .execute()
         )
-        # logging.info(f"[Supabase] words: {response.data}")
 
         words_list = [
             {
@@ -52,16 +66,6 @@ async def share_lesson(
             for row in response.data
         ]
 
-        # Lấy lesson name
-        lesson_resp = (
-            supabase.table("lessons")
-            .select("name")
-            .eq("id", id)
-            .single()
-            .execute()
-        )
-        lesson_name = lesson_resp.data.get("name") if lesson_resp.data else f"Lesson {id}"
-
         # Parse params c, p
         hide_columns = [int(x) for x in c.split(",") if x.isdigit()]
         hide_columns_print = [int(x) for x in p.split(",") if x.isdigit()]
@@ -69,7 +73,7 @@ async def share_lesson(
     except Exception as e:
         logging.error(f"[ERROR] Fetching data: {str(e)}")
         words_list = []
-        lesson_name = f"Lesson {id}"
+        lesson_name = f"Lesson {short_id}"
         hide_columns = []
         hide_columns_print = []
 
