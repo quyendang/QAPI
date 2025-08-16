@@ -814,7 +814,13 @@ async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
 @app.get("/share", response_class=HTMLResponse)
 async def share_lesson(request: Request, id: str = Query(...)):
     try:
-        response = supabase.table('words').select('word, type, pronunciation, meaning, translate, example, word_voice, eg_voice, trans_voice').eq('lesson_id', id).execute()
+        
+        response = (
+            supabase.table("words")
+            .select("*")
+            .eq("lesson_id", lesson_id)
+            .execute()
+        )
         words_list = [
             {
                 "word": row['word'], "type": row['type'], "pronunciation": row['pronunciation'], "meaning": row['meaning'],
