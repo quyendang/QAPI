@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson Words - {{ lesson_id }}</title>
+    <title>Lesson - {{ lesson_name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
@@ -29,9 +30,16 @@
             background-color: #007bff;
             color: white;
             font-weight: 600;
+            text-align: center;
         }
         .table td {
             vertical-align: middle;
+        }
+        .flex-row-space {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
         }
         .speaker-btn {
             background: none;
@@ -45,38 +53,67 @@
             color: #0056b3;
             transform: scale(1.1);
         }
-        .audio-player {
-            display: none;
-            margin-left: 10px;
+
+        .table th, .table td {
+            vertical-align: middle;
+            padding: 8px;
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        .fade-out {
-            animation: fadeOut 0.5s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+
+        @media print {
+            body {
+                margin: 8mm; /* giảm margin để có thêm không gian */
+                background: #fff !important;
+            }
+            header, footer, .speaker-btn {
+                display: none !important; /* ẩn header, footer, nút play */
+            }
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+            }
+            /* Giảm cột Index */
+            .table th:nth-child(1),
+            .table td:nth-child(1) {
+                width: 30px;
+                text-align: center;
+            }
+            /* Ưu tiên Word, Meaning, Example */
+            .table th:nth-child(2), .table td:nth-child(2) { width: 25%; }
+            .table th:nth-child(5), .table td:nth-child(5) { width: 28%; }
+            .table th:nth-child(6), .table td:nth-child(6) { width: 28%; }
+
+            /* Các cột khác nhỏ gọn lại */
+            .table th:nth-child(3), .table td:nth-child(3) { width: 7%; }
+            .table th:nth-child(4), .table td:nth-child(4) { width: 7%; }
+            .table th:nth-child(7), .table td:nth-child(7) { width: 5%; }
+
+            /* Thu nhỏ font để tránh xuống dòng quá nhiều */
+            .table td, .table th {
+                font-size: 11px;
+                word-wrap: break-word;
+            }
+
+            /* Full width khi in */
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container mt-5">
         <div class="card p-4">
-            <h1 class="text-center mb-4 text-primary">Words for Lesson {{ lesson_id }}</h1>
+            <h1 class="text-center mb-4 text-primary">{{ lesson_name }}</h1>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-striped table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Index</th>
+                            <th>*</th>
                             <th>Word</th>
                             <th>Type</th>
-                            <th>Pronunciation</th>
+                            <th>IPA</th>
                             <th>Meaning</th>
                             <th>Example</th>
                             <th>Translate</th>
@@ -85,37 +122,20 @@
                     <tbody>
                         {% for word in words %}
                         <tr>
-                            <td>{{ loop.index }}</td>
+                            <td class="text-center">{{ loop.index }}</td>
                             <td>
-                                {{ word.word }}
-                                <button class="speaker-btn" onclick="playAudio('word-{{ loop.index }}', '{{ word.word_voice }}')">
-                                    <i class="bi bi-volume-up"></i>
-                                </button>
-                                <audio id="word-{{ loop.index }}" class="audio-player"></audio>
+                                <div class="flex-row-space">
+                                    <span>{{ word.word }}</span>
+                                    <button class="speaker-btn" onclick="playAudio('{{ word.word_voice }}')">
+                                        <i class="bi bi-volume-up"></i>
+                                    </button>
+                                </div>
                             </td>
-                            <td>{{ word.type|default('N/A') }}</td>
-                            <td>{{ word.pronunciation }}</td>
-                            <td>
-                                {{ word.meaning }}
-                                <button class="speaker-btn" onclick="playAudio('meaning-{{ loop.index }}', '{{ word.df_voice }}')">
-                                    <i class="bi bi-volume-up"></i>
-                                </button>
-                                <audio id="meaning-{{ loop.index }}" class="audio-player"></audio>
-                            </td>
-                            <td>
-                                {{ word.example }}
-                                <button class="speaker-btn" onclick="playAudio('example-{{ loop.index }}', '{{ word.eg_voice }}')">
-                                    <i class="bi bi-volume-up"></i>
-                                </button>
-                                <audio id="example-{{ loop.index }}" class="audio-player"></audio>
-                            </td>
-                            <td>
-                                {{ word.translate }}
-                                <button class="speaker-btn" onclick="playAudio('translate-{{ loop.index }}', '{{ word.trans_voice }}')">
-                                    <i class="bi bi-volume-up"></i>
-                                </button>
-                                <audio id="translate-{{ loop.index }}" class="audio-player"></audio>
-                            </td>
+                            <td class="text-center">{{ word.type|default('N/A') }}</td>
+                            <td class="text-center">{{ word.pronunciation }}</td>
+                            <td>{{ word.meaning }}</td>
+                            <td>{{ word.example }}</td>
+                            <td>{{ word.translate }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -124,60 +144,28 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"></script>
     <script>
-        function playAudio(elementId, audioSrc) {
-            const audio = document.getElementById(elementId);
+        function playAudio(audioSrc) {
             if (!audioSrc) {
-                console.log(`No audio source for ${elementId}`);
+                console.log("No audio source");
                 return;
             }
 
-            // Stop any currently playing audio
-            document.querySelectorAll('.audio-player').forEach(a => {
-                if (!a.paused) a.pause();
-                a.classList.remove('fade-in', 'fade-out');
-            });
+            let finalSrc = "";
 
-            // Set audio source (handle URL or base64)
-            if (audioSrc.startsWith('http://') || audioSrc.startsWith('https://')) {
-                audio.src = audioSrc;
-            } else if (audioSrc.startsWith('data:audio/')) {
-                audio.src = audioSrc;
+            if (audioSrc.startsWith("http://") || audioSrc.startsWith("https://")) {
+                // remote URL
+                finalSrc = audioSrc;
             } else {
-                console.error(`Unsupported audio format for ${elementId}: ${audioSrc}`);
-                return;
+                // assume base64
+                finalSrc = "data:audio/mp3;base64," + audioSrc;
             }
 
-            // Play with fade effect
-            audio.volume = 0;
-            audio.play().then(() => {
-                const fadeIn = setInterval(() => {
-                    if (audio.volume < 1) {
-                        audio.volume = Math.min(audio.volume + 0.1, 1);
-                    } else {
-                        clearInterval(fadeIn);
-                    }
-                }, 100);
-
-                audio.onended = () => {
-                    const fadeOut = setInterval(() => {
-                        if (audio.volume > 0) {
-                            audio.volume = Math.max(audio.volume - 0.1, 0);
-                        } else {
-                            clearInterval(fadeOut);
-                            audio.classList.remove('fade-in');
-                        }
-                    }, 100);
-                };
-
-                audio.classList.add('fade-in');
-            }).catch(error => {
-                console.error(`Audio playback failed for ${elementId}:`, error);
-            });
+            var audio = new Audio(finalSrc);
+            audio.play().catch(err => console.error("Playback error:", err));
         }
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
