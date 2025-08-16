@@ -16,7 +16,4 @@ asyncpg
 slowapi
 cachetools
 aiohttp
-celery
-openai-whisper
-ffmpeg-python
 supabase
