@@ -76,7 +76,6 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize Supabase client
 supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
-logging.info(f"key: {os.environ.get("SUPABASE_KEY")}")
 # Asyncpg connection pool
 async def init_db_pool():
     return await asyncpg.create_pool(
