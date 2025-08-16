@@ -75,7 +75,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 logging.basicConfig(level=logging.INFO)
 
 # Initialize Supabase client
-supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+logging.info(f"SUPABASE_URL: {supabase_url}, SUPABASE_KEY: {supabase_key}")
+supabase: Client = create_client(supabase_url, supabase_key)
+
 # Asyncpg connection pool
 async def init_db_pool():
     return await asyncpg.create_pool(
