@@ -821,6 +821,7 @@ async def share_lesson(request: Request, id: str = Query(...)):
             .eq("lesson_id", id)
             .execute()
         )
+        logging.info(f"response supabase: {response.data}")
         words_list = [
             {
                 "word": row['word'], "type": row['type'], "pronunciation": row['pronunciation'], "meaning": row['meaning'],
