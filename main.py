@@ -24,6 +24,7 @@ import re
 import threading
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import fcntl
+from supabase import create_client, Client
 
 # Pydantic model for Device
 class Device(BaseModel):
@@ -72,6 +73,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
+
+# Initialize Supabase client
+supabase: Client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
 
 # Asyncpg connection pool
 async def init_db_pool():
@@ -803,6 +807,26 @@ async def get_ip_info(request: Request, time: int = 5, groupId: str = None):
         except Exception as e:
             logging.error(f"Error processing IP {ip}: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/share", response_class=HTMLResponse)
+async def share_lesson(request: Request, id: str = Query(...)):
+    try:
+        response = supabase.table('words').select('word, type, pronunciation, meaning, translate, example, word_voice, eg_voice, trans_voice').eq('lesson_id', id).execute()
+        words_list = [
+            {
+                "word": row['word'], "type": row['type'], "pronunciation": row['pronunciation'], "meaning": row['meaning'],
+                "translate": row['translate'], "example": row['example'], "word_voice": row['word_voice'],
+                "eg_voice": row['eg_voice'], "trans_voice": row['trans_voice']
+            } for row in response.data
+        ]
+    except Exception as e:
+        logging.error(f"Error fetching words: {str(e)}")
+        words_list = []
+    return templates.TemplateResponse("share.html", {
+        "request": request,
+        "words": words_list,
+        "lesson_id": id
+    })
 
 if __name__ == "__main__":
     import uvicorn
