@@ -3,41 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lesson Words</title>
+    <title>Lesson Words - {{ lesson_id }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .table {
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table th {
+            background-color: #007bff;
+            color: white;
+            font-weight: 600;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .speaker-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #007bff;
+            transition: color 0.3s ease, transform 0.2s ease;
+        }
+        .speaker-btn:hover {
+            color: #0056b3;
+            transform: scale(1.1);
+        }
+        .audio-player {
+            display: none;
+            margin-left: 10px;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        .fade-out {
+            animation: fadeOut 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4">Words for Lesson {{ lesson_id }}</h1>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Word</th>
-                    <th>Pronunciation</th>
-                    <th>Meaning</th>
-                    <th>Translate</th>
-                    <th>Example</th>
-                    <th>Word Voice</th>
-                    <th>Example Voice</th>
-                    <th>Translation Voice</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for word in words %}
-                <tr>
-                    <td>{{ word.word }}</td>
-                    <td>{{ word.pronunciation }}</td>
-                    <td>{{ word.meaning }}</td>
-                    <td>{{ word.translate }}</td>
-                    <td>{{ word.example }}</td>
-                    <td>{{ word.word_voice }}</td>
-                    <td>{{ word.eg_voice }}</td>
-                    <td>{{ word.trans_voice }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card p-4">
+            <h1 class="text-center mb-4 text-primary">Words for Lesson {{ lesson_id }}</h1>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th>Word</th>
+                            <th>Type</th>
+                            <th>Pronunciation</th>
+                            <th>Meaning</th>
+                            <th>Example</th>
+                            <th>Translate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for word in words %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {{ word.word }}
+                                <button class="speaker-btn" onclick="playAudio('word-{{ loop.index }}', '{{ word.word_voice }}')">
+                                    <i class="bi bi-volume-up"></i>
+                                </button>
+                                <audio id="word-{{ loop.index }}" class="audio-player"></audio>
+                            </td>
+                            <td>{{ word.type|default('N/A') }}</td>
+                            <td>{{ word.pronunciation }}</td>
+                            <td>
+                                {{ word.meaning }}
+                                <button class="speaker-btn" onclick="playAudio('meaning-{{ loop.index }}', '{{ word.df_voice }}')">
+                                    <i class="bi bi-volume-up"></i>
+                                </button>
+                                <audio id="meaning-{{ loop.index }}" class="audio-player"></audio>
+                            </td>
+                            <td>
+                                {{ word.example }}
+                                <button class="speaker-btn" onclick="playAudio('example-{{ loop.index }}', '{{ word.eg_voice }}')">
+                                    <i class="bi bi-volume-up"></i>
+                                </button>
+                                <audio id="example-{{ loop.index }}" class="audio-player"></audio>
+                            </td>
+                            <td>
+                                {{ word.translate }}
+                                <button class="speaker-btn" onclick="playAudio('translate-{{ loop.index }}', '{{ word.trans_voice }}')">
+                                    <i class="bi bi-volume-up"></i>
+                                </button>
+                                <audio id="translate-{{ loop.index }}" class="audio-player"></audio>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"></script>
+    <script>
+        function playAudio(elementId, audioSrc) {
+            const audio = document.getElementById(elementId);
+            if (!audioSrc) {
+                console.log(`No audio source for ${elementId}`);
+                return;
+            }
+
+            // Stop any currently playing audio
+            document.querySelectorAll('.audio-player').forEach(a => {
+                if (!a.paused) a.pause();
+                a.classList.remove('fade-in', 'fade-out');
+            });
+
+            // Set audio source (handle URL or base64)
+            if (audioSrc.startsWith('http://') || audioSrc.startsWith('https://')) {
+                audio.src = audioSrc;
+            } else if (audioSrc.startsWith('data:audio/')) {
+                audio.src = audioSrc;
+            } else {
+                console.error(`Unsupported audio format for ${elementId}: ${audioSrc}`);
+                return;
+            }
+
+            // Play with fade effect
+            audio.volume = 0;
+            audio.play().then(() => {
+                const fadeIn = setInterval(() => {
+                    if (audio.volume < 1) {
+                        audio.volume = Math.min(audio.volume + 0.1, 1);
+                    } else {
+                        clearInterval(fadeIn);
+                    }
+                }, 100);
+
+                audio.onended = () => {
+                    const fadeOut = setInterval(() => {
+                        if (audio.volume > 0) {
+                            audio.volume = Math.max(audio.volume - 0.1, 0);
+                        } else {
+                            clearInterval(fadeOut);
+                            audio.classList.remove('fade-in');
+                        }
+                    }, 100);
+                };
+
+                audio.classList.add('fade-in');
+            }).catch(error => {
+                console.error(`Audio playback failed for ${elementId}:`, error);
+            });
+        }
+    </script>
 </body>
 </html>
