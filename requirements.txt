@@ -19,3 +19,4 @@ aiohttp
 celery
 openai-whisper
 ffmpeg-python
+supabase
