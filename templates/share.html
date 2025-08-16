@@ -17,10 +17,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
         .table {
             background-color: #fff;
             border-radius: 10px;
@@ -61,44 +57,50 @@
 
         @media print {
             body {
-                margin: 8mm; /* giảm margin để có thêm không gian */
+                margin: 8mm;
                 background: #fff !important;
             }
             header, footer, .speaker-btn {
-                display: none !important; /* ẩn header, footer, nút play */
+                display: none !important;
             }
             .card {
                 border: none !important;
                 box-shadow: none !important;
             }
-            /* Giảm cột Index */
+
             .table th:nth-child(1),
             .table td:nth-child(1) {
                 width: 30px;
                 text-align: center;
             }
-            /* Ưu tiên Word, Meaning, Example */
             .table th:nth-child(2), .table td:nth-child(2) { width: 25%; }
             .table th:nth-child(5), .table td:nth-child(5) { width: 28%; }
             .table th:nth-child(6), .table td:nth-child(6) { width: 28%; }
-
-            /* Các cột khác nhỏ gọn lại */
             .table th:nth-child(3), .table td:nth-child(3) { width: 7%; }
             .table th:nth-child(4), .table td:nth-child(4) { width: 7%; }
             .table th:nth-child(7), .table td:nth-child(7) { width: 5%; }
 
-            /* Thu nhỏ font để tránh xuống dòng quá nhiều */
             .table td, .table th {
                 font-size: 11px;
                 word-wrap: break-word;
             }
-
-            /* Full width khi in */
             .container {
                 width: 100% !important;
                 max-width: 100% !important;
                 padding: 0;
             }
+
+            /* Ẩn nội dung nhưng giữ nguyên không gian */
+            {% if hide_on_print %}
+            {% for col in hide_on_print %}
+            .table td:nth-child({{ col+1 }}) {
+                visibility: hidden !important;
+            }
+            .table td:nth-child({{ col+1 }}) * {
+                visibility: hidden !important;
+            }
+            {% endfor %}
+            {% endif %}
         }
     </style>
 </head>
@@ -124,18 +126,20 @@
                         <tr>
                             <td class="text-center">{{ loop.index }}</td>
                             <td>
+                                {% if 1 not in hide_columns %}
                                 <div class="flex-row-space">
                                     <span>{{ word.word }}</span>
                                     <button class="speaker-btn" onclick="playAudio('{{ word.word_voice }}')">
                                         <i class="bi bi-volume-up"></i>
                                     </button>
                                 </div>
+                                {% endif %}
                             </td>
-                            <td class="text-center">{{ word.type|default('N/A') }}</td>
-                            <td class="text-center">{{ word.pronunciation }}</td>
-                            <td>{{ word.meaning }}</td>
-                            <td>{{ word.example }}</td>
-                            <td>{{ word.translate }}</td>
+                            <td class="text-center">{% if 2 not in hide_columns %}{{ word.type|default('N/A') }}{% endif %}</td>
+                            <td class="text-center">{% if 3 not in hide_columns %}{{ word.pronunciation }}{% endif %}</td>
+                            <td>{% if 4 not in hide_columns %}{{ word.meaning }}{% endif %}</td>
+                            <td>{% if 5 not in hide_columns %}{{ word.example }}{% endif %}</td>
+                            <td>{% if 6 not in hide_columns %}{{ word.translate }}{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -146,21 +150,13 @@
 
     <script>
         function playAudio(audioSrc) {
-            if (!audioSrc) {
-                console.log("No audio source");
-                return;
-            }
-
+            if (!audioSrc) return;
             let finalSrc = "";
-
             if (audioSrc.startsWith("http://") || audioSrc.startsWith("https://")) {
-                // remote URL
                 finalSrc = audioSrc;
             } else {
-                // assume base64
                 finalSrc = "data:audio/mp3;base64," + audioSrc;
             }
-
             var audio = new Audio(finalSrc);
             audio.play().catch(err => console.error("Playback error:", err));
         }
