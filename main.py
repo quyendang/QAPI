@@ -818,7 +818,7 @@ async def share_lesson(request: Request, id: str = Query(...)):
         response = (
             supabase.table("words")
             .select("*")
-            .eq("lesson_id", lesson_id)
+            .eq("lesson_id", id)
             .execute()
         )
         words_list = [
