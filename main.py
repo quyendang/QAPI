@@ -5,18 +5,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from supabase import create_client, Client
 
-# ========================
-# Khởi tạo ứng dụng FastAPI
-# ========================
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-# Logging
 logging.basicConfig(level=logging.INFO)
 
-# ========================
-# Kết nối Supabase
-# ========================
 supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_KEY")
 
@@ -26,20 +19,22 @@ if not supabase_url or not supabase_key:
 supabase: Client = create_client(supabase_url, supabase_key)
 
 
-# ========================
-# API hiển thị lesson share
-# ========================
 @app.get("/share", response_class=HTMLResponse)
-async def share_lesson(request: Request, id: str = Query(..., description="Lesson ID")):
+async def share_lesson(
+    request: Request,
+    id: str = Query(..., description="Lesson ID"),
+    c: str = Query("", description="Ẩn nội dung cột khi hiển thị, vd: 1,2,4"),
+    p: str = Query("", description="Ẩn nội dung cột khi in, vd: 4,5"),
+):
     try:
-        # Lấy danh sách words theo lesson_id
+        # Lấy words
         response = (
             supabase.table("words")
             .select("*")
             .eq("lesson_id", id)
             .execute()
         )
-        logging.info(f"[Supabase] words: {response.data}")
+        # logging.info(f"[Supabase] words: {response.data}")
 
         words_list = [
             {
@@ -57,7 +52,7 @@ async def share_lesson(request: Request, id: str = Query(..., description="Lesso
             for row in response.data
         ]
 
-        # Lấy lesson name từ bảng lessons
+        # Lấy lesson name
         lesson_resp = (
             supabase.table("lessons")
             .select("name")
@@ -65,13 +60,18 @@ async def share_lesson(request: Request, id: str = Query(..., description="Lesso
             .single()
             .execute()
         )
-
         lesson_name = lesson_resp.data.get("name") if lesson_resp.data else f"Lesson {id}"
+
+        # Parse params c, p
+        hide_columns = [int(x) for x in c.split(",") if x.isdigit()]
+        hide_columns_print = [int(x) for x in p.split(",") if x.isdigit()]
 
     except Exception as e:
         logging.error(f"[ERROR] Fetching data: {str(e)}")
         words_list = []
         lesson_name = f"Lesson {id}"
+        hide_columns = []
+        hide_columns_print = []
 
     return templates.TemplateResponse(
         "share.html",
@@ -80,13 +80,12 @@ async def share_lesson(request: Request, id: str = Query(..., description="Lesso
             "words": words_list,
             "lesson_id": id,
             "lesson_name": lesson_name,
+            "hide_columns": hide_columns,
+            "hide_columns_print": hide_columns_print,
         },
     )
 
 
-# ========================
-# Chạy ứng dụng
-# ========================
 if __name__ == "__main__":
     import uvicorn
 
@@ -94,6 +93,6 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        reload=True,  # bật reload khi dev
+        reload=True,
         workers=1
     )
