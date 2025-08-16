@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson Words</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Words for Lesson {{ lesson_id }}</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Word</th>
+                    <th>Pronunciation</th>
+                    <th>Meaning</th>
+                    <th>Translate</th>
+                    <th>Example</th>
+                    <th>Word Voice</th>
+                    <th>Example Voice</th>
+                    <th>Translation Voice</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for word in words %}
+                <tr>
+                    <td>{{ word.word }}</td>
+                    <td>{{ word.pronunciation }}</td>
+                    <td>{{ word.meaning }}</td>
+                    <td>{{ word.translate }}</td>
+                    <td>{{ word.example }}</td>
+                    <td>{{ word.word_voice }}</td>
+                    <td>{{ word.eg_voice }}</td>
+                    <td>{{ word.trans_voice }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
