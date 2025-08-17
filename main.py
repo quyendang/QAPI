@@ -18,6 +18,9 @@ if not supabase_url or not supabase_key:
 
 supabase: Client = create_client(supabase_url, supabase_key)
 
+@app.get("/", response_class=HTMLResponse)
+def homepage(request: Request):
+    return templates.TemplateResponse("landing.html", {"request": request})
 
 @app.get("/share", response_class=HTMLResponse)
 async def share_lesson(
