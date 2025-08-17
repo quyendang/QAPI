@@ -75,10 +75,13 @@ async def share_lesson(
 
     except Exception as e:
         logging.error(f"[ERROR] Fetching data: {str(e)}")
-        words_list = []
-        lesson_name = f"Lesson {short_id}"
-        hide_columns = []
-        hide_columns_print = []
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": str(e)
+            },
+        )
 
     return templates.TemplateResponse(
         "share.html",
