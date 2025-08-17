@@ -79,7 +79,7 @@ async def share_lesson(
             "error.html",
             {
                 "request": request,
-                "error": str(e)
+                "error": e.details
             },
         )
 
