@@ -21,16 +21,33 @@
             background-color: #fff;
             border-radius: 0px;
             overflow: hidden;
+            margin-bottom: 0;
         }
+        
+                    .table-responsive {
+                border-radius: 15px;
+                overflow: hidden;
+            }
+            
+            @media print {
+                .table-responsive {
+                    border-radius: 0 !important;
+                    overflow: visible !important;
+                }
+            }
         .table th {
             background-color: #007bff;
             color: white;
             font-weight: 600;
             text-align: center;
+            padding: 12px 8px;
+            font-size: 14px;
         }
         .table td {
             vertical-align: middle;
-            padding: 8px;
+            padding: 12px 8px;
+            font-size: 14px;
+            line-height: 1.4;
         }
 
         .flex-row-space {
@@ -65,50 +82,149 @@
 
         @media print {
             body {
-                margin: 8mm;
+                margin: 3mm !important;
                 background: #fff !important;
+                font-size: 12px !important;
             }
+            
             header, footer, .speaker-btn {
                 display: none !important;
             }
+            
             .card {
                 border: none !important;
                 box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .table {
+                width: 100% !important;
+                margin: 0 !important;
+                border-collapse: collapse !important;
+                border-radius: 0 !important;
             }
 
             .table th:nth-child(1),
             .table td:nth-child(1) {
-                width: 30px;
-                text-align: center;
+                width: 3.125% !important; /* 0.5/16 = 3.125% */
+                text-align: center !important;
             }
-            .table th:nth-child(2), .table td:nth-child(2) { width: 25%; }
-            .table th:nth-child(5), .table td:nth-child(5) { width: 28%; }
-            .table th:nth-child(6), .table td:nth-child(6) { width: 28%; }
-            .table th:nth-child(3), .table td:nth-child(3) { width: 7%; }
-            .table th:nth-child(4), .table td:nth-child(4) { width: 7%; }
-            .table th:nth-child(7), .table td:nth-child(7) { width: 5%; }
+            
+            .table th:nth-child(2), 
+            .table td:nth-child(2) { 
+                width: 15.625% !important; /* 2.5/16 = 15.625% */
+            }
+            
+            .table th:nth-child(3), 
+            .table td:nth-child(3) { 
+                width: 6.25% !important; /* 1/16 = 6.25% */
+            }
+            
+            .table th:nth-child(4), 
+            .table td:nth-child(4) { 
+                width: 12.5% !important; /* 2/16 = 12.5% */
+            }
+            
+            .table th:nth-child(5), 
+            .table td:nth-child(5) { 
+                width: 25% !important; /* 4/16 = 25% */
+            }
+            
+            .table th:nth-child(6), 
+            .table td:nth-child(6) { 
+                width: 25% !important; /* 4/16 = 25% */
+            }
+            
+            .table th:nth-child(7), 
+            .table td:nth-child(7) { 
+                width: 12.5% !important; /* 2/16 = 12.5% */
+            }
 
             .table td, .table th {
-                font-size: 11px;
-                word-wrap: break-word;
+                font-size: 11px !important;
+                word-wrap: break-word !important;
+                padding: 6px 4px !important;
+                border: 1px solid #ddd !important;
             }
+            
+            .table th {
+                background: #f0f0f0 !important;
+                color: black !important;
+                font-weight: bold !important;
+            }
+            
+            /* Print styles for hidden columns */
+            .print-hidden,
+            .print-hidden * {
+                color: transparent !important;
+                background-color: transparent !important;
+            }
+            
+            /* Ensure hidden columns maintain width */
+            .print-hidden {
+                min-width: 0 !important;
+                width: auto !important;
+            }
+        }
+        
+        /* Responsive design for mobile */
+        @media (max-width: 768px) {
             .container {
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 0;
+                padding: 0 10px;
             }
-
-            /* Ẩn nội dung nhưng giữ nguyên không gian */
-            {% if hide_on_print %}
-            {% for col in hide_on_print %}
-            .table td:nth-child({{ col+1 }}) {
-                visibility: hidden !important;
+            
+            .card {
+                margin: 10px 0;
             }
-            .table td:nth-child({{ col+1 }}) * {
-                visibility: hidden !important;
+            
+            .table th,
+            .table td {
+                padding: 8px 4px;
+                font-size: 13px;
             }
-            {% endfor %}
-            {% endif %}
+            
+            .table th:nth-child(1),
+            .table td:nth-child(1) {
+                width: 10% !important;
+            }
+            
+            .table th:nth-child(2),
+            .table td:nth-child(2) {
+                width: 25% !important;
+            }
+            
+            .table th:nth-child(3),
+            .table td:nth-child(3) {
+                width: 15% !important;
+            }
+            
+            .table th:nth-child(4),
+            .table td:nth-child(4) {
+                width: 20% !important;
+            }
+            
+            .table th:nth-child(5),
+            .table td:nth-child(5) {
+                width: 30% !important;
+            }
+            
+            .table th:nth-child(6),
+            .table td:nth-child(6) {
+                width: 30% !important;
+            }
+            
+            .table th:nth-child(7),
+            .table td:nth-child(7) {
+                width: 25% !important;
+            }
         }
     </style>
 </head>
@@ -153,10 +269,15 @@
                     </tbody>
                 </table>
             </div>
+            
+
         </div>
     </div>
 
     <script>
+        // Global variables for column hiding
+        const hideColumnsPrint = JSON.parse('{{ hide_columns_print|tojson if hide_columns_print else "[]" }}');
+        
         function playAudio(audioSrc) {
             if (!audioSrc) return;
             let finalSrc = "";
@@ -168,6 +289,74 @@
             var audio = new Audio(finalSrc);
             audio.play().catch(err => console.error("Playback error:", err));
         }
+
+        // Function to handle print column hiding
+        function handlePrintColumns() {
+            console.log('Handling print columns:', hideColumnsPrint);
+            hideColumnsPrint.forEach(col => {
+                const colIndex = col + 1; // +1 because CSS nth-child is 1-indexed
+                const cells = document.querySelectorAll(`.table th:nth-child(${colIndex}), .table td:nth-child(${colIndex})`);
+                
+                console.log(`Hiding column ${colIndex}, found ${cells.length} cells`);
+                
+                cells.forEach(cell => {
+                    // Hide text completely but keep column width
+                    cell.style.setProperty('color', 'transparent', 'important');
+                    cell.style.setProperty('background-color', 'transparent', 'important');
+                    
+                    // Add print-specific class for CSS override
+                    cell.classList.add('print-hidden');
+                });
+            });
+        }
+
+        // Function to restore columns after print
+        function restorePrintColumns() {
+            console.log('Restoring print columns');
+            hideColumnsPrint.forEach(col => {
+                const colIndex = col + 1;
+                const cells = document.querySelectorAll(`.table th:nth-child(${colIndex}), .table td:nth-child(${colIndex})`);
+                
+                cells.forEach(cell => {
+                    // Restore original styling
+                    cell.style.removeProperty('color');
+                    cell.style.removeProperty('background-color');
+                    cell.classList.remove('print-hidden');
+                });
+            });
+        }
+
+        // Add print event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up print handlers');
+            console.log('Hide columns for print:', hideColumnsPrint);
+            
+            // Handle before print
+            window.addEventListener('beforeprint', function() {
+                console.log('Before print event triggered');
+                handlePrintColumns();
+            });
+            
+            // Handle after print
+            window.addEventListener('afterprint', function() {
+                console.log('After print event triggered');
+                restorePrintColumns();
+            });
+            
+            // Handle print media query changes
+            const mediaQuery = window.matchMedia('print');
+            mediaQuery.addListener(function(mql) {
+                console.log('Print media query changed:', mql.matches);
+                if (mql.matches) {
+                    handlePrintColumns();
+                } else {
+                    restorePrintColumns();
+                }
+            });
+            
+            // Test print functionality
+            console.log('Print event listeners set up successfully');
+        });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
