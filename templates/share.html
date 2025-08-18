@@ -231,7 +231,7 @@
 <body>
     <div class="container mt-5">
         <div class="card p-4">
-            <h1 class="text-center mb-4 text-primary">{{ lesson_name }}</h1>
+            <h1 class="text-center mb-4 text-primary" style="font-size: 1.8rem;">{{ lesson_name }}</h1>
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle">
                     <thead>
@@ -354,9 +354,485 @@
                 }
             });
             
+            // Handle Control+Q for clipboard copy (word + meaning)
+            document.addEventListener('keydown', function(event) {
+                // Check for Control+Q
+                if (event.ctrlKey && event.key === 'q') {
+                    event.preventDefault(); // Prevent default behavior
+                    copyTableToClipboard();
+                }
+                // Handle Control+W for clipboard copy with translate
+                if (event.ctrlKey && event.key === 'w') {
+                    event.preventDefault(); // Prevent default behavior
+                    copyTableToClipboardWithTranslate();
+                }
+                // Handle Control+E for custom format copy
+                if (event.ctrlKey && event.key === 'e') {
+                    event.preventDefault(); // Prevent default behavior
+                    showCustomFormatPopup();
+                }
+            });
+            
             // Test print functionality
             console.log('Print event listeners set up successfully');
         });
+        
+        // Function to copy table data to clipboard
+        function copyTableToClipboard() {
+            try {
+                const table = document.querySelector('.table tbody');
+                if (!table) {
+                    console.error('Table not found');
+                    return;
+                }
+                
+                const rows = table.querySelectorAll('tr');
+                let clipboardText = '';
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 6) { // Ensure we have enough columns
+                        const word = cells[1]?.textContent?.trim() || ''; // Word column (index 1)
+                        const meaning = cells[4]?.textContent?.trim() || ''; // Meaning column (index 4)
+                        
+                        if (word && meaning) {
+                            clipboardText += word + '\t' + meaning + '\n';
+                        }
+                    }
+                });
+                
+                if (clipboardText) {
+                    // Use modern clipboard API if available
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(clipboardText).then(() => {
+                            console.log('Data copied to clipboard successfully');
+                            showCopySuccessMessage();
+                        }).catch(err => {
+                            console.error('Failed to copy to clipboard:', err);
+                            fallbackCopyToClipboard(clipboardText);
+                        });
+                    } else {
+                        // Fallback for older browsers or non-secure contexts
+                        fallbackCopyToClipboard(clipboardText);
+                    }
+                } else {
+                    console.error('No data to copy');
+                }
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+            }
+        }
+        
+        // Function to copy table data to clipboard with translate
+        function copyTableToClipboardWithTranslate() {
+            try {
+                const table = document.querySelector('.table tbody');
+                if (!table) {
+                    console.error('Table not found');
+                    return;
+                }
+                
+                const rows = table.querySelectorAll('tr');
+                let clipboardText = '';
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 7) { // Ensure we have enough columns including translate
+                        const word = cells[1]?.textContent?.trim() || ''; // Word column (index 1)
+                        const meaning = cells[4]?.textContent?.trim() || ''; // Meaning column (index 4)
+                        const translate = cells[6]?.textContent?.trim() || ''; // Translate column (index 6)
+                        
+                        if (word && meaning) {
+                            clipboardText += word + '\t' + meaning + '[' + translate + ']\n';
+                        }
+                    }
+                });
+                
+                if (clipboardText) {
+                    // Use modern clipboard API if available
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(clipboardText).then(() => {
+                            console.log('Data with translate copied to clipboard successfully');
+                            showCopySuccessMessage('✅ Data with translate copied!');
+                        }).catch(err => {
+                            console.error('Failed to copy to clipboard:', err);
+                            fallbackCopyToClipboard(clipboardText);
+                        });
+                    } else {
+                        // Fallback for older browsers or non-secure contexts
+                        fallbackCopyToClipboard(clipboardText);
+                    }
+                } else {
+                    console.error('No data to copy');
+                }
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+            }
+        }
+        
+        // Function to show custom format popup
+        function showCustomFormatPopup() {
+            // Remove existing popup if any
+            const existingPopup = document.getElementById('customFormatPopup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+            
+            // Create popup container
+            const popup = document.createElement('div');
+            popup.id = 'customFormatPopup';
+            popup.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            // Create popup content
+            const popupContent = document.createElement('div');
+            popupContent.style.cssText = `
+                background: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                max-width: 600px;
+                width: 90%;
+                position: relative;
+            `;
+            
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #666;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            closeBtn.onclick = () => popup.remove();
+            
+            // Create title
+            const title = document.createElement('h3');
+            title.textContent = 'Select Copy Format';
+            title.style.cssText = `
+                margin: 0 0 20px 0;
+                color: #333;
+                font-size: 18px;
+                text-align: center;
+            `;
+            
+            // Create preset formats section
+            const presetSection = document.createElement('div');
+            presetSection.style.cssText = `
+                margin-bottom: 25px;
+            `;
+            
+            const presetTitle = document.createElement('h4');
+            presetTitle.textContent = 'Quick Formats:';
+            presetTitle.style.cssText = `
+                margin: 0 0 15px 0;
+                color: #555;
+                font-size: 16px;
+            `;
+            
+            // Define preset formats
+            const presetFormats = [
+                { name: 'Word + Meaning', format: '1-t-4', description: 'word + tab + meaning' },
+                { name: 'Word + Type + Meaning', format: '1-t-2-t-4', description: 'word + tab + type + tab + meaning' },
+                { name: 'Word + Meaning + Example', format: '1-t-4-t-5', description: 'word + tab + meaning + tab + example' },
+                { name: 'Word + Meaning + [Translate]', format: '1-t-4-[6]', description: 'word + tab + meaning + [translate]' },
+                { name: 'Word + (Type) + Meaning + Example', format: '1-(-2-)-t-4-t-5', description: 'word + (type) + tab + meaning + tab + example' },
+                { name: 'Word + IPA + Meaning', format: '1-t-3-t-4', description: 'word + tab + IPA + tab + meaning' }
+            ];
+            
+            // Create preset buttons
+            presetFormats.forEach(preset => {
+                const presetBtn = document.createElement('button');
+                presetBtn.textContent = preset.name;
+                presetBtn.style.cssText = `
+                    display: block;
+                    width: 100%;
+                    padding: 12px;
+                    margin-bottom: 8px;
+                    background: #f8f9fa;
+                    border: 2px solid #e9ecef;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    text-align: left;
+                    transition: all 0.2s;
+                    font-size: 14px;
+                `;
+                
+                presetBtn.onmouseover = () => {
+                    presetBtn.style.background = '#e3f2fd';
+                    presetBtn.style.borderColor = '#2196f3';
+                };
+                
+                presetBtn.onmouseout = () => {
+                    presetBtn.style.background = '#f8f9fa';
+                    presetBtn.style.borderColor = '#e9ecef';
+                };
+                
+                presetBtn.onclick = () => {
+                    copyTableWithCustomFormat(preset.format);
+                    popup.remove();
+                };
+                
+                // Add description below button
+                const desc = document.createElement('div');
+                desc.textContent = preset.description;
+                desc.style.cssText = `
+                    font-size: 12px;
+                    color: #666;
+                    margin-top: 4px;
+                    font-style: italic;
+                `;
+                
+                presetBtn.appendChild(desc);
+                presetSection.appendChild(presetBtn);
+            });
+            
+            // Create custom format section
+            const customSection = document.createElement('div');
+            customSection.style.cssText = `
+                border-top: 1px solid #e9ecef;
+                padding-top: 20px;
+            `;
+            
+            const customTitle = document.createElement('h4');
+            customTitle.textContent = 'Custom Format:';
+            customTitle.style.cssText = `
+                margin: 0 0 15px 0;
+                color: #555;
+                font-size: 16px;
+            `;
+            
+            const customDesc = document.createElement('p');
+            customDesc.innerHTML = `
+                <strong>Format Guide:</strong><br>
+                • Numbers: 1=Word, 2=Type, 3=IPA, 4=Meaning, 5=Example, 6=Translate<br>
+                • <strong>t</strong> = Tab separator<br>
+                • <strong>-</strong> = Separator between elements<br>
+                • <strong>()</strong> = Wrap content in parentheses<br>
+                • <strong>[]</strong> = Wrap content in brackets
+            `;
+            customDesc.style.cssText = `
+                margin: 0 0 15px 0;
+                color: #666;
+                font-size: 13px;
+                line-height: 1.4;
+            `;
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Enter custom format (e.g., 1-t-4-t-5)';
+            input.value = '1-t-4-t-5';
+            input.style.cssText = `
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                font-size: 16px;
+                margin-bottom: 15px;
+                box-sizing: border-box;
+            `;
+            
+            // Create custom copy button
+            const customCopyBtn = document.createElement('button');
+            customCopyBtn.textContent = 'Copy with Custom Format';
+            customCopyBtn.style.cssText = `
+                background: #28a745;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 16px;
+                cursor: pointer;
+                width: 100%;
+                transition: background 0.3s;
+            `;
+            customCopyBtn.onmouseover = () => customCopyBtn.style.background = '#218838';
+            customCopyBtn.onmouseout = () => customCopyBtn.style.background = '#28a745';
+            customCopyBtn.onclick = () => {
+                const format = input.value.trim();
+                if (format) {
+                    copyTableWithCustomFormat(format);
+                    popup.remove();
+                }
+            };
+            
+            // Assemble popup
+            popupContent.appendChild(closeBtn);
+            popupContent.appendChild(title);
+            popupContent.appendChild(presetSection);
+            popupContent.appendChild(customSection);
+            popupContent.appendChild(customTitle);
+            popupContent.appendChild(customDesc);
+            popupContent.appendChild(input);
+            popupContent.appendChild(customCopyBtn);
+            popup.appendChild(popupContent);
+            
+            // Add to page
+            document.body.appendChild(popup);
+            
+            // Focus input
+            input.focus();
+            input.select();
+        }
+        
+
+        
+        // Function to copy table with custom format
+        function copyTableWithCustomFormat(format) {
+            try {
+                const table = document.querySelector('.table tbody');
+                if (!table) {
+                    console.error('Table not found');
+                    return;
+                }
+                
+                const rows = table.querySelectorAll('tr');
+                let clipboardText = '';
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 6) {
+                        let rowText = '';
+                        const parts = format.split('-');
+                        
+                        for (let i = 0; i < parts.length; i++) {
+                            const part = parts[i];
+                            
+                            if (part === 't') {
+                                rowText += '\t';
+                            } else if (part.startsWith('(') && part.endsWith(')')) {
+                                const innerPart = part.slice(1, -1);
+                                const columnIndex = parseInt(innerPart) - 1;
+                                if (columnIndex >= 0 && columnIndex < cells.length) {
+                                    const cellContent = cells[columnIndex]?.textContent?.trim() || '';
+                                    rowText += '(' + cellContent + ')';
+                                }
+                            } else if (part.startsWith('[') && part.endsWith(']')) {
+                                const innerPart = part.slice(1, -1);
+                                const columnIndex = parseInt(innerPart) - 1;
+                                if (columnIndex >= 0 && columnIndex < cells.length) {
+                                    const cellContent = cells[columnIndex]?.textContent?.trim() || '';
+                                    rowText += '[' + cellContent + ']';
+                                }
+                            } else if (/^\d+$/.test(part)) {
+                                const columnIndex = parseInt(part) - 1;
+                                if (columnIndex >= 0 && columnIndex < cells.length) {
+                                    const cellContent = cells[columnIndex]?.textContent?.trim() || '';
+                                    rowText += cellContent;
+                                }
+                            }
+                        }
+                        
+                        if (rowText.trim()) {
+                            clipboardText += rowText + '\n';
+                        }
+                    }
+                });
+                
+                if (clipboardText) {
+                    // Use modern clipboard API if available
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(clipboardText).then(() => {
+                            console.log('Data with custom format copied to clipboard successfully');
+                            showCopySuccessMessage('✅ Custom format copied!');
+                        }).catch(err => {
+                            console.error('Failed to copy to clipboard:', err);
+                            fallbackCopyToClipboard(clipboardText);
+                        });
+                    } else {
+                        // Fallback for older browsers or non-secure contexts
+                        fallbackCopyToClipboard(clipboardText);
+                    }
+                } else {
+                    console.error('No data to copy');
+                }
+            } catch (error) {
+                console.error('Error copying to clipboard:', error);
+            }
+        }
+        
+        // Fallback copy method for older browsers
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                console.log('Data copied to clipboard using fallback method');
+                showCopySuccessMessage();
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // Show success message
+        function showCopySuccessMessage(customMessage = '✅ Data copied to clipboard!') {
+            // Create a temporary success message
+            const message = document.createElement('div');
+            message.textContent = customMessage;
+            message.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            // Add animation CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(message);
+            
+            // Remove message after 3 seconds
+            setTimeout(() => {
+                if (message.parentNode) {
+                    message.parentNode.removeChild(message);
+                }
+            }, 3000);
+        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
