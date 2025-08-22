@@ -76,12 +76,11 @@
             document.getElementById('status').innerText = 'Starting import...';
             const file = fileInput.files[0];
             const fileSize = file.size;
-            let totalWords = 0;
-            let sentWords = 0;
             let groups = [];
             let lessons = [];
-            let wordsBatch = [];
-            const BATCH_SIZE = 500; // Gửi words theo batch 500
+            let words = []; // Collect all words before sending in batches
+            let totalWords = 0;
+            const BATCH_SIZE = 500;
 
             // Initialize Oboe.js
             const oboeInstance = oboe();
@@ -101,10 +100,9 @@
                     original_group_id: groupId,
                     name: lessonData.lessonName || ''
                 });
-            }).node('users.F4pm4km5TiY3NPEegMOkXaPYcKt2.groups.*.lessons.*.words.*', async function(wordData, path) {
-                const wordId = path[path.length - 1];
+            }).node('users.F4pm4km5TiY3NPEegMOkXaPYcKt2.groups.*.lessons.*.words.*', function(wordData, path) {
                 const lessonId = path[path.length - 3];
-                wordsBatch.push({
+                words.push({
                     original_lesson_id: lessonId,
                     word: wordData.word || '',
                     type: wordData.wordType || '',
@@ -118,29 +116,45 @@
                     time: wordData.time || ''
                 });
                 totalWords++;
-
-                if (wordsBatch.length >= BATCH_SIZE) {
-                    await sendWordsBatch(userId, [...wordsBatch]);
-                    sentWords += wordsBatch.length;
-                    wordsBatch = [];
-                    updateProgress((sentWords / totalWords) * 100);
-                }
+                updateProgress((totalWords / 100000) * 50); // Estimate progress for parsing
             }).done(async function() {
-                document.getElementById('status').innerText = 'Parsing done. Sending data...';
+                document.getElementById('status').innerText = 'Parsing done. Sending groups...';
 
-                // Send groups
-                if (groups.length > 0) {
-                    await sendBatch('/import/groups', userId, { groups });
+                // Step 1: Send all groups
+                try {
+                    if (groups.length > 0) {
+                        await sendBatch('/import/groups', userId, { groups });
+                    }
+                    document.getElementById('status').innerText = 'Groups imported. Sending lessons...';
+                } catch (err) {
+                    document.getElementById('error').innerText = 'Error importing groups: ' + err.message;
+                    return;
                 }
 
-                // Send lessons
-                if (lessons.length > 0) {
-                    await sendBatch('/import/lessons', userId, { lessons });
+                // Step 2: Send all lessons
+                try {
+                    if (lessons.length > 0) {
+                        await sendBatch('/import/lessons', userId, { lessons });
+                    }
+                    document.getElementById('status').innerText = 'Lessons imported. Sending words...';
+                } catch (err) {
+                    document.getElementById('error').innerText = 'Error importing lessons: ' + err.message;
+                    return;
                 }
 
-                // Send remaining words
-                if (wordsBatch.length > 0) {
-                    await sendWordsBatch(userId, wordsBatch);
+                // Step 3: Send words in batches
+                let sentWords = 0;
+                for (let i = 0; i < words.length; i += BATCH_SIZE) {
+                    const batch = words.slice(i, i + BATCH_SIZE);
+                    try {
+                        await sendBatch('/import/words', userId, { words: batch });
+                        sentWords += batch.length;
+                        document.getElementById('status').innerText = `Sent ${sentWords} of ${totalWords} words...`;
+                        updateProgress(50 + (sentWords / totalWords) * 50); // Progress for sending (50-100%)
+                    } catch (err) {
+                        document.getElementById('error').innerText = 'Error importing words: ' + err.message;
+                        return;
+                    }
                 }
 
                 document.getElementById('status').innerText = 'Import completed!';
@@ -161,7 +175,7 @@
                     if (event.target.result) {
                         oboeInstance.emit('data', event.target.result);
                         offset += chunkSize;
-                        updateProgress((offset / fileSize) * 50); // Progress for reading (50% of total progress)
+                        updateProgress(Math.min((offset / fileSize) * 50, 50)); // Progress for reading (0-50%)
                         if (offset < fileSize) {
                             readNextChunk();
                         } else {
@@ -186,14 +200,9 @@
                 });
                 const result = await response.json();
                 if (result.error) {
-                    document.getElementById('error').innerText += '\nError: ' + result.error;
-                } else {
-                    document.getElementById('status').innerText += '\n' + result.message;
+                    throw new Error(result.error);
                 }
-            }
-
-            async function sendWordsBatch(userId, batch) {
-                await sendBatch('/import/words', userId, { words: batch });
+                document.getElementById('status').innerText = result.message;
             }
 
             function updateProgress(percent) {
