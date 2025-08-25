@@ -50,6 +50,7 @@ async def share_lesson(
             supabase.table("words")
             .select("*")
             .eq("lesson_id", lesson_id)
+            .order("latest_update", desc=True)
             .execute()
         )
 
