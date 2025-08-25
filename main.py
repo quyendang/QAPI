@@ -29,21 +29,33 @@ async def share_lesson(
     c: str = Query("", description="Ẩn nội dung cột khi hiển thị, vd: 1,2,4"),
     p: str = Query("", description="Ẩn nội dung cột khi in, vd: 4,5"),
 ):
+    return await process_lesson(request, id, c, p)
+
+@app.get("/{short_id}", response_class=HTMLResponse)
+async def share_lesson_by_short_id(
+    request: Request,
+    short_id: str,
+    c: str = Query("", description="Ẩn nội dung cột khi hiển thị, vd: 1,2,4"),
+    p: str = Query("", description="Ẩn nội dung cột khi in, vd: 4,5"),
+):
+    return await process_lesson(request, short_id, c, p)
+
+async def process_lesson(request: Request, short_id: str, c: str, p: str):
     try:
         # Lấy lesson theo short_id
         lesson_resp = (
             supabase.table("lessons")
             .select("id, name")
-            .eq("short_id", id)
+            .eq("short_id", short_id)
             .single()
             .execute()
         )
 
         if not lesson_resp.data:
-            raise ValueError(f"Lesson with short_id={id} not found")
+            raise ValueError(f"Lesson with short_id={short_id} not found")
 
         lesson_id = lesson_resp.data["id"]
-        lesson_name = lesson_resp.data.get("name", f"Lesson {id}")
+        lesson_name = lesson_resp.data.get("name", f"Lesson {short_id}")
 
         # Lấy words theo lesson_id
         response = (
@@ -80,7 +92,7 @@ async def share_lesson(
             "error.html",
             {
                 "request": request,
-                "error": e.details
+                "error": str(e)
             },
         )
 
@@ -89,13 +101,12 @@ async def share_lesson(
         {
             "request": request,
             "words": words_list,
-            "lesson_id": id,
+            "lesson_id": short_id,
             "lesson_name": lesson_name,
             "hide_columns": hide_columns,
             "hide_columns_print": hide_columns_print,
         },
     )
-
 
 if __name__ == "__main__":
     import uvicorn
